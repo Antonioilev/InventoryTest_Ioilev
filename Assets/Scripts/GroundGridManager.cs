@@ -1,75 +1,46 @@
 using UnityEngine;
-using UnityEngine.UI;
-using System.Collections.Generic;
 
 public class GroundGridManager : MonoBehaviour
 {
-    [Header("UI References")]
-    public RectTransform slotContainer;  // Контейнер с GridLayoutGroup для земли
-    public GameObject slotPrefab;        // Префаб ячейки, без визуала или с прозрачным
-    public int columns = 10;
-    public int rows = 5;
+    public Transform ItemsParent; // Контейнер для предметов на земле
+    public RectTransform groundRectTransform; // UI-элемент земли или аналог
 
-    private List<GameObject> spawnedSlots = new List<GameObject>();
-    private bool[,] gridUsed;
-
-    void Start()
+    // Проверяет, находится ли указатель мыши над зоной земли (например, RectTransform с землей)
+    public bool IsPointerOverGround(Vector2 screenPosition)
     {
-        GenerateGrid();
+        if (groundRectTransform == null) return false;
+
+        Canvas canvas = GetComponentInParent<Canvas>();
+        Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+        return RectTransformUtility.RectangleContainsScreenPoint(groundRectTransform, screenPosition, cam);
     }
 
-    public void GenerateGrid()
+    // Пытается разместить предмет на земле по позиции мыши (примерная реализация)
+    public bool TryPlaceItemAtMousePosition(InventoryItemData itemData, RectTransform draggedRect)
     {
-        ClearGrid();
+        if (itemData == null || ItemsParent == null) return false;
 
-        gridUsed = new bool[columns, rows];
+        Canvas canvas = GetComponentInParent<Canvas>();
+        Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
 
-        GridLayoutGroup grid = slotContainer.GetComponent<GridLayoutGroup>();
-        if (grid == null)
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(groundRectTransform, Input.mousePosition, cam, out Vector2 localPoint))
+            return false;
+
+        // Создаем экземпляр предмета на земле
+        GameObject itemGO = Instantiate(itemData.itemPrefab, ItemsParent, false);
+        itemGO.name = $"GroundItem_{itemData.itemId}";
+
+        RectTransform rt = itemGO.GetComponent<RectTransform>();
+        if (rt != null)
         {
-            Debug.LogError("GridLayoutGroup component missing on slotContainer");
-            return;
+            rt.anchoredPosition = localPoint;
+
+            // Подстройка размера, если нужно (можно доработать под реальные размеры)
+            rt.sizeDelta = draggedRect.sizeDelta;
         }
 
-        Vector2 containerSize = slotContainer.rect.size;
+        // Можно тут добавить инициализацию, если нужно (InventoryItemView и др.)
 
-        float availableWidth = containerSize.x - grid.padding.left - grid.padding.right - grid.spacing.x * (columns - 1);
-        float availableHeight = containerSize.y - grid.padding.top - grid.padding.bottom - grid.spacing.y * (rows - 1);
-
-        float cellWidth = availableWidth / columns;
-        float cellHeight = availableHeight / rows;
-        float cellSize = Mathf.Min(cellWidth, cellHeight);
-
-        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = columns;
-        grid.cellSize = new Vector2(cellSize, cellSize);
-
-        // Создаём слоты (невидимые)
-        for (int y = 0; y < rows; y++)
-        {
-            for (int x = 0; x < columns; x++)
-            {
-                GameObject slot = Instantiate(slotPrefab, slotContainer);
-                slot.name = $"GroundSlot_{x}_{y}";
-                spawnedSlots.Add(slot);
-
-                // Сделать слот невидимым (например, прозрачный Image)
-                Image img = slot.GetComponent<Image>();
-                if (img != null)
-                    img.color = new Color(1, 1, 1, 0); // прозрачный
-            }
-        }
+        return true;
     }
-
-    public void ClearGrid()
-    {
-        foreach (var slot in spawnedSlots)
-        {
-            if (slot != null)
-                Destroy(slot);
-        }
-        spawnedSlots.Clear();
-    }
-
-    // Можно добавить методы TryPlaceItem, RemoveItem и т.д. аналогично рюкзаку
 }
