@@ -15,4 +15,5 @@ MonoBehaviour:
   itemId: Sword_Item
   icon: {fileID: 1816393175719290521, guid: 1e08fb1a15295f9429cb25824832c8d0, type: 3}
   size: {x: 1, y: 2}
+  itemPrefab: {fileID: 8370512434901664269, guid: c41512ae102d27349abbe6c820d01367, type: 3}
   rotatable: 1

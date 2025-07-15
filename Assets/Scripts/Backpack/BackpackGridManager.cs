@@ -1,24 +1,20 @@
 using UnityEngine;
-using UnityEngine.UI;
 using System.Collections.Generic;
 
 public class BackpackGridManager : MonoBehaviour
 {
+    public RectTransform SlotContainer => gridLayoutManager.slotContainer;
     private bool[,] gridUsed;
-    public Transform itemsParent; // Контейнер для инстанцированных предметов
+    public Transform itemsParent;
 
     [Header("Config")]
     public BackpackConfig backpackConfig;
 
-    [Header("UI References")]
-    public RectTransform slotContainer; // Панель с GridLayoutGroup
-    public GameObject slotPrefab;       // Префаб одной ячейки
-    public Transform backgroundContainer; // Контейнер под визуал рюкзака (в Canvas под ячейками)
+    [Header("References")]
+    public BackpackGridLayoutManager gridLayoutManager;   // Новый скрипт для работы со слотами
+    public Transform backgroundContainer;
 
-    private List<GameObject> spawnedSlots = new List<GameObject>();
     private GameObject currentBackgroundInstance;
-
-    public int maxCellSize = 150;
 
     void Start()
     {
@@ -29,9 +25,9 @@ public class BackpackGridManager : MonoBehaviour
     {
         ClearGrid();
 
-        if (backpackConfig == null || slotPrefab == null || slotContainer == null)
+        if (backpackConfig == null)
         {
-            Debug.LogError("BackpackGridManager: Missing references");
+            Debug.LogError("BackpackGridManager: Missing backpackConfig");
             return;
         }
 
@@ -42,7 +38,7 @@ public class BackpackGridManager : MonoBehaviour
             return;
         }
 
-        // Создаем фон рюкзака
+        // Визуал рюкзака
         if (backgroundContainer != null && preset.backpackVisualPrefab != null)
         {
             if (currentBackgroundInstance != null)
@@ -50,77 +46,20 @@ public class BackpackGridManager : MonoBehaviour
                 Destroy(currentBackgroundInstance);
                 currentBackgroundInstance = null;
             }
-            GameObject prefabInstance = Instantiate(preset.backpackVisualPrefab);
-            prefabInstance.transform.SetParent(backgroundContainer, false);
+            GameObject prefabInstance = Instantiate(preset.backpackVisualPrefab, backgroundContainer, false);
             currentBackgroundInstance = prefabInstance;
         }
 
-        Vector2 containerSize = slotContainer.rect.size;
-        int width = preset.dimension.x;
-        int height = preset.dimension.y;
+        // Создаем слоты через LayoutManager
+        gridLayoutManager.GenerateSlots(preset.dimension, preset.disabledCellIndices);
 
-        GridLayoutGroup grid = slotContainer.GetComponent<GridLayoutGroup>();
-        if (grid == null)
-        {
-            Debug.LogError("GridLayoutGroup component missing on slotContainer");
-            return;
-        }
-
-        float availableWidth = containerSize.x - grid.padding.left - grid.padding.right - grid.spacing.x * (width - 1);
-        float availableHeight = containerSize.y - grid.padding.top - grid.padding.bottom - grid.spacing.y * (height - 1);
-
-        float cellWidth = availableWidth / width;
-        float cellHeight = availableHeight / height;
-        float cellSize = Mathf.Min(cellWidth, cellHeight);
-        cellSize = Mathf.Min(cellSize, maxCellSize);
-
-        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = width;
-        grid.cellSize = new Vector2(cellSize, cellSize);
-
-        HashSet<int> disabledIndicesSet = new HashSet<int>(preset.disabledCellIndices ?? new List<int>());
-
-        for (int y = 0; y < height; y++)
-        {
-            for (int x = 0; x < width; x++)
-            {
-                int cellIndex = y * width + x;
-                GameObject slot = Instantiate(slotPrefab, slotContainer);
-                slot.name = $"Slot_{x}_{y}_idx{cellIndex}";
-                spawnedSlots.Add(slot);
-
-                bool isDisabled = disabledIndicesSet.Contains(cellIndex);
-
-                Image slotImage = slot.GetComponent<Image>();
-                if (slotImage != null)
-                {
-                    Color c = slotImage.color;
-                    c.a = isDisabled ? 0f : 1f;
-                    slotImage.color = c;
-                }
-
-                Transform lockIcon = slot.transform.Find("LockIcon");
-                if (lockIcon != null)
-                    lockIcon.gameObject.SetActive(isDisabled);
-
-                CanvasGroup cg = slot.GetComponent<CanvasGroup>();
-                if (cg == null)
-                    cg = slot.AddComponent<CanvasGroup>();
-                cg.blocksRaycasts = !isDisabled;
-            }
-        }
-
-        gridUsed = new bool[width, height];
+        // Инициализируем массив занятости ячеек
+        gridUsed = new bool[preset.dimension.x, preset.dimension.y];
     }
 
     public void ClearGrid()
     {
-        foreach (var slot in spawnedSlots)
-        {
-            if (slot != null)
-                Destroy(slot);
-        }
-        spawnedSlots.Clear();
+        gridLayoutManager.ClearSlots();
 
         if (currentBackgroundInstance != null)
         {
@@ -129,18 +68,12 @@ public class BackpackGridManager : MonoBehaviour
         }
     }
 
-    public void SetBackpackConfig(BackpackConfig config)
-    {
-        backpackConfig = config;
-        GenerateGrid();
-    }
-
     public bool TryPlaceItem(Vector2Int slotPosition, InventoryItemData itemData)
     {
-        if (itemData == null || slotPrefab == null || itemsParent == null || itemData.itemPrefab == null)
+        if (itemData == null || itemsParent == null || itemData.itemPrefab == null)
             return false;
 
-        var size = itemData.size;
+        Vector2Int size = itemData.size;
         int width = gridUsed.GetLength(0);
         int height = gridUsed.GetLength(1);
 
@@ -156,25 +89,22 @@ public class BackpackGridManager : MonoBehaviour
             }
         }
 
-        // Инстанцируем префаб предмета
         GameObject itemGO = Instantiate(itemData.itemPrefab, itemsParent, false);
         itemGO.name = $"Item_{itemData.itemId}";
 
-        // Получаем RectTransform и выравниваем позицию
         RectTransform rt = itemGO.GetComponent<RectTransform>();
-        var slot = GetSlotRect(slotPosition);
-        if (rt != null && slot != null)
+        var slotRect = gridLayoutManager.GetSlotRect(slotPosition);
+        if (rt != null && slotRect != null)
         {
             rt.anchorMin = new Vector2(0, 1);
             rt.anchorMax = new Vector2(0, 1);
             rt.pivot = new Vector2(0, 1);
 
-            rt.sizeDelta = slot.sizeDelta * (Vector2)itemData.size;
-            rt.anchoredPosition = slot.anchoredPosition;
+            rt.sizeDelta = slotRect.sizeDelta * (Vector2)size;
+            rt.anchoredPosition = slotRect.anchoredPosition;
         }
 
-        // Убеждаемся, что на предмете есть InventoryItemView и инициализируем
-        InventoryItemView view = itemGO.GetComponent<InventoryItemView>();
+        var view = itemGO.GetComponent<InventoryItemView>();
         if (view != null)
         {
             view.Init(itemData, slotPosition);
@@ -184,37 +114,17 @@ public class BackpackGridManager : MonoBehaviour
             Debug.LogWarning("TryPlaceItem: InventoryItemView missing on itemPrefab");
         }
 
-        // Проверяем наличие компонента для Drag (InventoryItemDraggable), чтобы предмет был интерактивен
-        InventoryItemDraggable drag = itemGO.GetComponent<InventoryItemDraggable>();
+        var drag = itemGO.GetComponent<InventoryItemDraggable>();
         if (drag == null)
         {
             Debug.LogWarning("TryPlaceItem: InventoryItemDraggable missing on itemPrefab");
         }
 
         for (int dx = 0; dx < size.x; dx++)
-        {
             for (int dy = 0; dy < size.y; dy++)
-            {
                 gridUsed[slotPosition.x + dx, slotPosition.y + dy] = true;
-            }
-        }
 
         return true;
-    }
-
-
-
-    public RectTransform GetSlotRect(Vector2Int gridPos)
-    {
-        int width = gridUsed.GetLength(0);
-        int index = gridPos.y * width + gridPos.x;
-
-        if (index >= 0 && index < spawnedSlots.Count)
-        {
-            return spawnedSlots[index].GetComponent<RectTransform>();
-        }
-
-        return null;
     }
 
     public bool TryPlaceItemAtMousePosition(InventoryItemData itemData, RectTransform draggedRect)
@@ -222,11 +132,11 @@ public class BackpackGridManager : MonoBehaviour
         Canvas canvas = GetComponentInParent<Canvas>();
         Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
 
-        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(slotContainer, Input.mousePosition, cam, out Vector2 localPoint))
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(gridLayoutManager.slotContainer, Input.mousePosition, cam, out Vector2 localPoint))
             return false;
 
-        Vector2 slotSize = GetSlotSize();
-        Vector2 offset = localPoint + slotContainer.rect.size / 2f;
+        Vector2 slotSize = gridLayoutManager.GetCellSize();
+        Vector2 offset = localPoint + gridLayoutManager.slotContainer.rect.size / 2f;
 
         int column = Mathf.FloorToInt(offset.x / slotSize.x);
         int row = Mathf.FloorToInt(offset.y / slotSize.y);
@@ -236,9 +146,12 @@ public class BackpackGridManager : MonoBehaviour
         return TryPlaceItem(gridPos, itemData);
     }
 
-    public Vector2 GetSlotSize()
+    public bool IsPointerOverSlotContainer(Vector2 screenPosition)
     {
-        var grid = slotContainer.GetComponent<GridLayoutGroup>();
-        return grid.cellSize;
+        if (SlotContainer == null) return false;
+
+        Canvas canvas = GetComponentInParent<Canvas>();
+        Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+        return RectTransformUtility.RectangleContainsScreenPoint(SlotContainer, screenPosition, cam);
     }
 }

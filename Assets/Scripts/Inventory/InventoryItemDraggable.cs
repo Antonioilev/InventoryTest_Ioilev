@@ -65,9 +65,9 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
         {
             Debug.LogWarning("InventoryItemDraggable: backpackGridManager is not assigned!");
         }
-        else if (backpackGridManager.slotContainer == null)
+        else if (backpackGridManager.SlotContainer == null)
         {
-            Debug.LogWarning("InventoryItemDraggable: backpackGridManager.slotContainer is not assigned!");
+            Debug.LogWarning("InventoryItemDraggable: backpackGridManager SlotContainer is not assigned!");
         }
         else if (itemData == null)
         {
@@ -75,8 +75,7 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
         }
         else
         {
-            // Проверяем, находится ли мышь над слотом рюкзака
-            if (RectTransformUtility.RectangleContainsScreenPoint(backpackGridManager.slotContainer, Input.mousePosition))
+            if (backpackGridManager.IsPointerOverSlotContainer(Input.mousePosition))
             {
                 placed = backpackGridManager.TryPlaceItemAtMousePosition(itemData, rectTransform);
             }
@@ -84,13 +83,11 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
 
         if (!placed)
         {
-            // Если не удалось положить в рюкзак, возвращаем на прежнее место
             transform.SetParent(originalParent, true);
             rectTransform.anchoredPosition = originalPosition;
         }
         else
         {
-            // Уничтожаем перетаскиваемый объект, т.к. предмет теперь в рюкзаке
             Destroy(gameObject);
         }
     }
