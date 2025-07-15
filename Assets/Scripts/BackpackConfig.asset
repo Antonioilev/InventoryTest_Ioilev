@@ -15,15 +15,16 @@ MonoBehaviour:
   presets:
   - name: BackPack_9cells
     dimension: {x: 3, y: 3}
-    disabledCells: []
-    backpackVisualPrefab: {fileID: 6379617197943235913, guid: 459f2922b55136d4594bde4906b1cda1, type: 3}
-    isCurrent: 1
-  - name: BackPack_12cells
-    dimension: {x: 4, y: 4}
-    disabledCells:
-    - {x: 1, y: 1}
-    - {x: 1, y: 2}
-    - {x: 2, y: 1}
-    - {x: 2, y: 2}
+    disabledCellIndices: 
     backpackVisualPrefab: {fileID: 6379617197943235913, guid: 459f2922b55136d4594bde4906b1cda1, type: 3}
     isCurrent: 0
+  - name: BackPack_12cells
+    dimension: {x: 4, y: 4}
+    disabledCellIndices: 0500000006000000090000000a000000
+    backpackVisualPrefab: {fileID: 6379617197943235913, guid: 459f2922b55136d4594bde4906b1cda1, type: 3}
+    isCurrent: 0
+  - name: BackPack_6_3_cells
+    dimension: {x: 6, y: 3}
+    disabledCellIndices: 0000000005000000060000000c00000011000000
+    backpackVisualPrefab: {fileID: 3191154622202292329, guid: 3d7d58c0dab0ba5459e4ece0e680f982, type: 3}
+    isCurrent: 1

@@ -1,14 +1,14 @@
-using UnityEngine;
+п»їusing UnityEngine;
 using System.Collections.Generic;
 
 [CreateAssetMenu(fileName = "BackpackConfig", menuName = "Inventory/BackpackConfig", order = 1)]
 public class BackpackConfig : ScriptableObject
 {
-    [Tooltip("Список доступных пресетов рюкзаков")]
+    [Tooltip("РЎРїРёСЃРѕРє РґРѕСЃС‚СѓРїРЅС‹С… РїСЂРµСЃРµС‚РѕРІ СЂСЋРєР·Р°РєРѕРІ")]
     public List<BackpackPreset> presets = new List<BackpackPreset>();
 
     /// <summary>
-    /// Возвращает текущий активный пресет рюкзака
+    /// Р’РѕР·РІСЂР°С‰Р°РµС‚ С‚РµРєСѓС‰РёР№ Р°РєС‚РёРІРЅС‹Р№ РїСЂРµСЃРµС‚ СЂСЋРєР·Р°РєР° (isCurrent = true)
     /// </summary>
     public BackpackPreset GetCurrentPreset()
     {
@@ -18,8 +18,55 @@ public class BackpackConfig : ScriptableObject
                 return preset;
         }
 
-        Debug.LogWarning("BackpackConfig: Ни один пресет не помечен как текущий (isCurrent)");
+        Debug.LogWarning("BackpackConfig: РќРё РѕРґРёРЅ РїСЂРµСЃРµС‚ РЅРµ РїРѕРјРµС‡РµРЅ РєР°Рє С‚РµРєСѓС‰РёР№ (isCurrent)");
         return null;
+    }
+
+    /// <summary>
+    /// РџРѕРјРµС‡Р°РµС‚ С‚РѕР»СЊРєРѕ РѕРґРёРЅ РїСЂРµСЃРµС‚ РєР°Рє Р°РєС‚РёРІРЅС‹Р№, РїРѕ РёРЅРґРµРєСЃСѓ
+    /// </summary>
+    public void SetPresetByIndex(int index)
+    {
+        if (index < 0 || index >= presets.Count)
+        {
+            Debug.LogWarning($"BackpackConfig: РџРѕРїС‹С‚РєР° СѓСЃС‚Р°РЅРѕРІРёС‚СЊ РїСЂРµСЃРµС‚ РїРѕ РЅРµРІР°Р»РёРґРЅРѕРјСѓ РёРЅРґРµРєСЃСѓ {index}");
+            return;
+        }
+
+        for (int i = 0; i < presets.Count; i++)
+        {
+            presets[i].isCurrent = (i == index);
+        }
+
+#if UNITY_EDITOR
+        UnityEditor.EditorUtility.SetDirty(this); // СЃРѕС…СЂР°РЅРµРЅРёРµ РёР·РјРµРЅРµРЅРёР№ РІ СЂРµРґР°РєС‚РѕСЂРµ
+#endif
+    }
+
+    /// <summary>
+    /// РћР±РµСЃРїРµС‡РёРІР°РµС‚, С‡С‚Рѕ С‚РѕР»СЊРєРѕ РѕРґРёРЅ РїСЂРµСЃРµС‚ РїРѕРјРµС‡РµРЅ РєР°Рє С‚РµРєСѓС‰РёР№ (isCurrent).
+    /// Р•СЃР»Рё РЅРµСЃРєРѕР»СЊРєРѕ, СЃР±СЂР°СЃС‹РІР°РµС‚ РІСЃРµ, РєСЂРѕРјРµ РїРµСЂРІРѕРіРѕ РЅР°Р№РґРµРЅРЅРѕРіРѕ.
+    /// </summary>
+    public void EnsureOnlyOneCurrent()
+    {
+        bool foundCurrent = false;
+        for (int i = 0; i < presets.Count; i++)
+        {
+            if (presets[i].isCurrent)
+            {
+                if (foundCurrent)
+                {
+                    presets[i].isCurrent = false;
+#if UNITY_EDITOR
+                    UnityEditor.EditorUtility.SetDirty(this);
+#endif
+                }
+                else
+                {
+                    foundCurrent = true;
+                }
+            }
+        }
     }
 }
 
@@ -28,13 +75,15 @@ public class BackpackPreset
 {
     public string name = "New Backpack";
 
-    [Header("Размер и структура")]
-    public Vector2Int dimension = new Vector2Int(4, 4); // Ширина и высота сетки
-    public List<Vector2Int> disabledCells = new();      // Отключённые ячейки (координаты)
+    [Header("Р Р°Р·РјРµСЂ Рё СЃС‚СЂСѓРєС‚СѓСЂР°")]
+    public Vector2Int dimension = new Vector2Int(4, 4);
 
-    [Header("Визуализация")]
-    public GameObject backpackVisualPrefab; // Префаб фона рюкзака (спрайт и визуальные элементы)
+    [Tooltip("РРЅРґРµРєСЃС‹ СЏС‡РµРµРє, РєРѕС‚РѕСЂС‹Рµ РЅСѓР¶РЅРѕ РѕС‚РєР»СЋС‡РёС‚СЊ (РѕС‚ 0 РґРѕ width*height - 1)")]
+    public List<int> disabledCellIndices = new List<int>();
 
-    [Header("Текущий пресет")]
-    public bool isCurrent; // Галочка "текущий выбранный"
+    [Header("Р’РёР·СѓР°Р»РёР·Р°С†РёСЏ")]
+    public GameObject backpackVisualPrefab;
+
+    [Header("РўРµРєСѓС‰РёР№ РїСЂРµСЃРµС‚")]
+    public bool isCurrent;
 }
