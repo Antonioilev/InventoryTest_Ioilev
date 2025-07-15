@@ -27,8 +27,14 @@ public class BackpackConfig : ScriptableObject
 public class BackpackPreset
 {
     public string name = "New Backpack";
-    public Vector2Int dimension = new Vector2Int(4, 4); // Ширина и высота
-    public List<Vector2Int> disabledCells = new(); // Отключённые ячейки
-    public Sprite backpackSprite; // Фоновый спрайт рюкзака
-    public bool isCurrent; // Отметка активного пресета
+
+    [Header("Размер и структура")]
+    public Vector2Int dimension = new Vector2Int(4, 4); // Ширина и высота сетки
+    public List<Vector2Int> disabledCells = new();      // Отключённые ячейки (координаты)
+
+    [Header("Визуализация")]
+    public GameObject backpackVisualPrefab; // Префаб фона рюкзака (спрайт и визуальные элементы)
+
+    [Header("Текущий пресет")]
+    public bool isCurrent; // Галочка "текущий выбранный"
 }

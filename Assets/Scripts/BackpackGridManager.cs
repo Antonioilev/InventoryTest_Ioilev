@@ -8,10 +8,12 @@ public class BackpackGridManager : MonoBehaviour
     public BackpackConfig backpackConfig;
 
     [Header("UI References")]
-    public RectTransform slotContainer; // панель с GridLayoutGroup или пустой RectTransform
-    public GameObject slotPrefab; // префаб слота с Image
+    public RectTransform slotContainer; // Панель с GridLayoutGroup
+    public GameObject slotPrefab;       // Префаб одной ячейки
+    public Transform backgroundContainer; // Контейнер под визуал рюкзака (в Canvas под ячейками)
 
     private List<GameObject> spawnedSlots = new List<GameObject>();
+    private GameObject currentBackgroundInstance;
 
     void Start()
     {
@@ -35,6 +37,25 @@ public class BackpackGridManager : MonoBehaviour
             return;
         }
 
+        // Создаем фон из префаба
+        if (backgroundContainer != null)
+        {
+            // Удаляем предыдущий
+            if (currentBackgroundInstance != null)
+            {
+                Destroy(currentBackgroundInstance);
+                currentBackgroundInstance = null;
+            }
+
+            // Создаем новый
+            if (preset.backpackVisualPrefab != null)
+            {
+                currentBackgroundInstance = Instantiate(preset.backpackVisualPrefab, backgroundContainer);
+                currentBackgroundInstance.name = $"BackpackVisual_{preset.name}";
+            }
+        }
+
+        // Генерация ячеек
         Vector2 containerSize = slotContainer.rect.size;
 
         int width = preset.dimension.x;
@@ -76,9 +97,15 @@ public class BackpackGridManager : MonoBehaviour
                 Destroy(slot);
         }
         spawnedSlots.Clear();
+
+        // Удалим фон
+        if (currentBackgroundInstance != null)
+        {
+            Destroy(currentBackgroundInstance);
+            currentBackgroundInstance = null;
+        }
     }
 
-    // Метод для смены конфигурации рюкзака
     public void SetBackpackConfig(BackpackConfig config)
     {
         backpackConfig = config;

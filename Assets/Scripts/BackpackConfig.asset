@@ -16,7 +16,7 @@ MonoBehaviour:
   - name: BackPack_9cells
     dimension: {x: 3, y: 3}
     disabledCells: []
-    backpackSprite: {fileID: -2937448130243662236, guid: c6b830a6f5e6f9e42bed1680e07c6d32, type: 3}
+    backpackVisualPrefab: {fileID: 6379617197943235913, guid: 459f2922b55136d4594bde4906b1cda1, type: 3}
     isCurrent: 1
   - name: BackPack_12cells
     dimension: {x: 4, y: 4}
@@ -25,5 +25,5 @@ MonoBehaviour:
     - {x: 1, y: 2}
     - {x: 2, y: 1}
     - {x: 2, y: 2}
-    backpackSprite: {fileID: -2937448130243662236, guid: c6b830a6f5e6f9e42bed1680e07c6d32, type: 3}
+    backpackVisualPrefab: {fileID: 6379617197943235913, guid: 459f2922b55136d4594bde4906b1cda1, type: 3}
     isCurrent: 0
