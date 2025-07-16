@@ -53,7 +53,7 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
         if (backpackGridManager != null)
         {
             backpackGridManager.UpdateGridUsed();
-            backpackGridManager.UpdateSlotHighlightsForItem(itemData);
+            //backpackGridManager.UpdateSlotHighlightsForItem(itemData);
         }
     }
 
@@ -70,7 +70,7 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
             // Обновляем подсветку доступных слотов в рюкзаке на каждом кадре
             if (backpackGridManager != null)
             {
-                backpackGridManager.UpdateSlotHighlightsForItem(itemData);
+                //backpackGridManager.UpdateSlotHighlightsForItem(itemData);
             }
         }
     }

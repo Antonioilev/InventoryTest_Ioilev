@@ -245,12 +245,17 @@ public class BackpackGridManager : MonoBehaviour
 
         Vector2 cellSize = GetSlotSize();
 
-        int x = Mathf.Clamp(Mathf.FloorToInt(offset.x / cellSize.x), 0, gridUsed.GetLength(0) - 1);
-        int y = Mathf.Clamp(Mathf.FloorToInt(offset.y / cellSize.y), 0, gridUsed.GetLength(1) - 1);
+        int width = gridUsed.GetLength(0);
+        int height = gridUsed.GetLength(1);
+
+        int x = Mathf.Clamp(Mathf.FloorToInt(offset.x / cellSize.x), 0, width - 1);
+
+        // »нвертируем Y, чтобы верхний слот был y = 0, а не снизу
+        int y = height - 1 - Mathf.Clamp(Mathf.FloorToInt(offset.y / cellSize.y), 0, height - 1);
 
         //  орректировка по вертикали дл€ предметов выше 1 €чейки (чтобы верхний левый слот был на высоте курсора)
         if (itemSize != default && itemSize.y > 1)
-            y = Mathf.Clamp(y - (itemSize.y - 1), 0, gridUsed.GetLength(1) - 1);
+            y = Mathf.Clamp(y, 0, height - 1);
 
         gridPos = new Vector2Int(x, y);
         return true;
@@ -323,12 +328,16 @@ public class BackpackGridManager : MonoBehaviour
             for (int x = 0; x < width; x++)
             {
                 Vector2Int pos = new(x, y);
+                GameObject slotGO = spawnedSlots[y * width + x];
+                if (slotGO == null || !slotGO.activeSelf)
+                    continue; // пропускаем выключенные €чейки
+
                 if (CanPlaceAt(pos, itemData.size))
                 {
-                    RectTransform slot = GetSlotRect(pos);
+                    RectTransform slot = slotGO.GetComponent<RectTransform>();
                     if (slot != null && slot.TryGetComponent(out Image img))
                     {
-                        img.color = new Color(0.4f, 1f, 0.4f, 1f);
+                        img.color = new Color(0.4f, 1f, 0.4f, 1f); // зелЄна€ подсветка
                     }
                 }
             }
