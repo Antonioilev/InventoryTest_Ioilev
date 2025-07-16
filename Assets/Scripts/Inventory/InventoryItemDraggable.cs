@@ -11,7 +11,7 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
     private Vector2 originalPosition;
     private Transform originalParent;
 
-    private Vector2 pointerOffset; // смещение от pivot до курсора
+    private Vector2 pointerOffset;
 
     [Header("Drag Targets")]
     public BackpackGridManager backpackGridManager;
@@ -42,12 +42,19 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
         if (canvas != null)
             transform.SetParent(canvas.transform, true);
 
-        // Вычисляем смещение от курсора до pivot
+        // Вычисляем смещение курсора относительно пивота предмета
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvas.transform as RectTransform,
             eventData.position, eventData.pressEventCamera, out Vector2 localMousePosition);
 
         pointerOffset = localMousePosition - rectTransform.anchoredPosition;
+
+        // Обновляем занятость и подсветку доступных слотов в рюкзаке
+        if (backpackGridManager != null)
+        {
+            backpackGridManager.UpdateGridUsed();
+            backpackGridManager.UpdateSlotHighlightsForItem(itemData);
+        }
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -59,6 +66,12 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
             eventData.position, eventData.pressEventCamera, out Vector2 localMousePosition))
         {
             rectTransform.anchoredPosition = localMousePosition - pointerOffset;
+
+            // Обновляем подсветку доступных слотов в рюкзаке на каждом кадре
+            if (backpackGridManager != null)
+            {
+                backpackGridManager.UpdateSlotHighlightsForItem(itemData);
+            }
         }
     }
 
@@ -69,21 +82,31 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
 
         bool placed = false;
 
-        // Попробовать поместить в рюкзак
+        // Попытка поместить предмет в рюкзак, если курсор внутри рюкзака
         if (backpackGridManager != null &&
             RectTransformUtility.RectangleContainsScreenPoint(backpackGridManager.slotContainer, Input.mousePosition))
         {
             placed = backpackGridManager.PlaceExistingItemAtMousePosition(itemData, gameObject);
-        }
 
-        // Попробовать землю
+            if (placed)
+            {
+                backpackGridManager.UpdateGridUsed(); // Обновляем массив занятости после размещения
+            }
+        }
+        // Попытка поместить предмет на землю, если курсор внутри groundGrid
         else if (!placed && groundGridManager != null &&
             RectTransformUtility.RectangleContainsScreenPoint(groundGridManager.slotContainer, Input.mousePosition))
         {
             placed = groundGridManager.PlaceExistingItemAtMousePosition(itemData, gameObject);
         }
 
-        // Вернуть на место
+        // Очистка подсветки рюкзака
+        if (backpackGridManager != null)
+        {
+            backpackGridManager.ClearAllSlotHighlights();
+        }
+
+        // Если не удалось поместить, возвращаем предмет на исходную позицию и родителя
         if (!placed)
         {
             transform.SetParent(originalParent, true);

@@ -25,6 +25,51 @@ public class BackpackGridManager : MonoBehaviour
         GenerateGrid();
     }
 
+    public void UpdateGridUsed()
+    {
+        if (gridUsed == null)
+            return;
+
+        int width = gridUsed.GetLength(0);
+        int height = gridUsed.GetLength(1);
+
+        // —бросим зан€тость
+        for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
+                gridUsed[x, y] = false;
+
+        Vector2 slotSize = GetSlotSize();
+
+        foreach (Transform item in itemsParent)
+        {
+            RectTransform rt = item as RectTransform;
+            if (rt == null)
+                continue;
+
+            Vector2 localPos = rt.anchoredPosition;
+
+            int startX = Mathf.RoundToInt(localPos.x / slotSize.x);
+            int startY = Mathf.RoundToInt(-localPos.y / slotSize.y);
+
+            int sizeX = Mathf.CeilToInt(rt.sizeDelta.x / slotSize.x);
+            int sizeY = Mathf.CeilToInt(rt.sizeDelta.y / slotSize.y);
+
+            Debug.Log($"Item '{item.name}' pos({localPos.x:F2},{localPos.y:F2}), start cell ({startX},{startY}), size ({sizeX},{sizeY})");
+
+            for (int dx = 0; dx < sizeX; dx++)
+                for (int dy = 0; dy < sizeY; dy++)
+                {
+                    int x = startX + dx;
+                    int y = startY + dy;
+
+                    if (x >= 0 && x < width && y >= 0 && y < height)
+                        gridUsed[x, y] = true;
+                    else
+                        Debug.LogWarning($"Item '{item.name}' cell out of bounds ({x},{y})");
+                }
+        }
+    }
+
     public void GenerateGrid()
     {
         ClearGrid();
@@ -80,7 +125,6 @@ public class BackpackGridManager : MonoBehaviour
                 slot.name = $"Slot_{x}_{y}_idx{idx}";
                 spawnedSlots.Add(slot);
 
-                // ƒобавл€ем сюда Ч ставим пивот и анкоры в левый верхний угол
                 RectTransform slotRT = slot.GetComponent<RectTransform>();
                 if (slotRT != null)
                 {
@@ -88,7 +132,6 @@ public class BackpackGridManager : MonoBehaviour
                     slotRT.anchorMin = new Vector2(0f, 1f);
                     slotRT.anchorMax = new Vector2(0f, 1f);
                 }
-
 
                 bool isDisabled = disabledIndices.Contains(idx);
 
@@ -172,7 +215,7 @@ public class BackpackGridManager : MonoBehaviour
 
     public bool TryPlaceItemAtMousePosition(InventoryItemData data)
     {
-        if (!GetGridPositionUnderMouse(out Vector2Int gridPos))
+        if (!GetGridPositionUnderMouse(out Vector2Int gridPos, data.size))
             return false;
 
         return TryPlaceItem(gridPos, data);
@@ -180,25 +223,35 @@ public class BackpackGridManager : MonoBehaviour
 
     public bool PlaceExistingItemAtMousePosition(InventoryItemData data, GameObject itemGO)
     {
-        if (!GetGridPositionUnderMouse(out Vector2Int gridPos))
+        if (!GetGridPositionUnderMouse(out Vector2Int gridPos, data.size))
             return false;
 
         return PlaceExistingItem(gridPos, data, itemGO);
     }
 
-    private bool GetGridPositionUnderMouse(out Vector2Int gridPos)
+    //  лючевой метод: максимально простой и точный выбор слота под курсором без лишних округлений
+    private bool GetGridPositionUnderMouse(out Vector2Int gridPos, Vector2Int itemSize = default)
     {
         gridPos = Vector2Int.zero;
+
         Canvas canvas = GetComponentInParent<Canvas>();
         Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
 
         if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(slotContainer, Input.mousePosition, cam, out Vector2 localPoint))
             return false;
 
-        Vector2 offset = localPoint + slotContainer.rect.size / 2f;
+        // —мещение локальной точки к левому нижнему углу slotContainer (pivot слотов (0,1) Ч левый верхний)
+        Vector2 offset = localPoint + slotContainer.rect.size * 0.5f;
+
         Vector2 cellSize = GetSlotSize();
-        int x = Mathf.FloorToInt(offset.x / cellSize.x);
-        int y = Mathf.FloorToInt(offset.y / cellSize.y);
+
+        int x = Mathf.Clamp(Mathf.FloorToInt(offset.x / cellSize.x), 0, gridUsed.GetLength(0) - 1);
+        int y = Mathf.Clamp(Mathf.FloorToInt(offset.y / cellSize.y), 0, gridUsed.GetLength(1) - 1);
+
+        //  орректировка по вертикали дл€ предметов выше 1 €чейки (чтобы верхний левый слот был на высоте курсора)
+        if (itemSize != default && itemSize.y > 1)
+            y = Mathf.Clamp(y - (itemSize.y - 1), 0, gridUsed.GetLength(1) - 1);
+
         gridPos = new Vector2Int(x, y);
         return true;
     }
@@ -257,5 +310,44 @@ public class BackpackGridManager : MonoBehaviour
     {
         var grid = slotContainer.GetComponent<GridLayoutGroup>();
         return grid != null ? grid.cellSize : Vector2.one * 100f;
+    }
+
+    public void UpdateSlotHighlightsForItem(InventoryItemData itemData)
+    {
+        int width = gridUsed.GetLength(0);
+        int height = gridUsed.GetLength(1);
+        ClearAllSlotHighlights();
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                Vector2Int pos = new(x, y);
+                if (CanPlaceAt(pos, itemData.size))
+                {
+                    RectTransform slot = GetSlotRect(pos);
+                    if (slot != null && slot.TryGetComponent(out Image img))
+                    {
+                        img.color = new Color(0.4f, 1f, 0.4f, 1f);
+                    }
+                }
+            }
+        }
+    }
+
+    public void ClearAllSlotHighlights()
+    {
+        foreach (var slotGO in spawnedSlots)
+        {
+            if (slotGO.TryGetComponent(out Image img))
+            {
+                Color c = img.color;
+                c.r = 1f;
+                c.g = 1f;
+                c.b = 1f;
+                c.a = img.raycastTarget ? 1f : 0f;
+                img.color = c;
+            }
+        }
     }
 }
