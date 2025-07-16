@@ -266,4 +266,21 @@ public class GroundGridManager : MonoBehaviour
         var grid = slotContainer.GetComponent<GridLayoutGroup>();
         return grid.cellSize;
     }
+    public bool TryFindFreePosition(Vector2Int size, out Vector2Int position)
+    {
+        for (int y = 0; y <= rows - size.y; y++)
+        {
+            for (int x = 0; x <= columns - size.x; x++)
+            {
+                Vector2Int candidatePos = new Vector2Int(x, y);
+                if (CanPlaceAt(candidatePos, size))
+                {
+                    position = candidatePos;
+                    return true;
+                }
+            }
+        }
+        position = Vector2Int.zero;
+        return false;
+    }
 }

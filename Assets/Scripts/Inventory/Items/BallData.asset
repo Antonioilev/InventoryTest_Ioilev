@@ -15,4 +15,5 @@ MonoBehaviour:
   itemId: Ball_Item
   icon: {fileID: -7680488457819168245, guid: 806a2ac73a52c3e4c8f3806091843410, type: 3}
   size: {x: 1, y: 1}
+  itemPrefab: {fileID: 8370512434901664269, guid: 9b17c7876e449dc49bd524e787d16ac5, type: 3}
   rotatable: 1

@@ -194,6 +194,56 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 111386322}
   m_CullTransparentMesh: 1
+--- !u!1 &117659127
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 117659129}
+  - component: {fileID: 117659128}
+  m_Layer: 0
+  m_Name: Generator_Items
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &117659128
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 117659127}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2433045549517649bcd317e52a50f34, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  groundGridManager: {fileID: 1307455717}
+  backpackGridManager: {fileID: 1645737270}
+  sword: {fileID: 11400000, guid: 70819b4467775fd4cb9a28d71e834080, type: 2}
+  knife: {fileID: 11400000, guid: 25baf86e728cc724db0dc82051566e4e, type: 2}
+  screwdriver: {fileID: 11400000, guid: 295ddf9738e151e4c9337a150a7f63aa, type: 2}
+  ball: {fileID: 11400000, guid: 58aa936d7530b1e4bb66c46fcb446ac3, type: 2}
+--- !u!4 &117659129
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 117659127}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &131849110
 GameObject:
   m_ObjectHideFlags: 0
@@ -276,7 +326,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 131849113}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 117659128}
+        m_TargetAssemblyTypeName: Generator_Items, Assembly-CSharp
+        m_MethodName: Spawn_Sword
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &131849113
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1305,8 +1367,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
-  m_AnchoredPosition: {x: -18, y: -268}
-  m_SizeDelta: {x: 342.5, y: 273.54}
+  m_AnchoredPosition: {x: -18, y: -330}
+  m_SizeDelta: {x: 342.5, y: 374.07}
   m_Pivot: {x: 1, y: 0.5}
 --- !u!114 &704454983
 MonoBehaviour:
@@ -2880,7 +2942,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1856805164}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 117659128}
+        m_TargetAssemblyTypeName: Generator_Items, Assembly-CSharp
+        m_MethodName: Spawn_Ball
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1856805164
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3076,7 +3150,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1951632212}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 117659128}
+        m_TargetAssemblyTypeName: Generator_Items, Assembly-CSharp
+        m_MethodName: Spawn_Screwdriver
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1951632212
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3197,7 +3283,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1979025748}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 117659128}
+        m_TargetAssemblyTypeName: Generator_Items, Assembly-CSharp
+        m_MethodName: Spawn_Knife
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1979025748
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3948,3 +4046,4 @@ SceneRoots:
   - {fileID: 765514330}
   - {fileID: 1484753855762580065}
   - {fileID: 1673989876}
+  - {fileID: 117659129}
