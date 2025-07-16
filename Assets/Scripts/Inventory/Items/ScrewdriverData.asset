@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c1c33fbc9d8765e4c99d158d513fc3b6, type: 3}
-  m_Name: KnifeData
+  m_Name: ScrewdriverData
   m_EditorClassIdentifier: 
-  itemId: Knife_Item
-  icon: {fileID: 4103374828399030923, guid: d2aedd51ec8b3f042bb7a98e2f5f367f, type: 3}
+  itemId: Screwdriver_Item
+  icon: {fileID: 7131119404261407681, guid: fdf2c6ee8734f5343bcda311cc0d806a, type: 3}
   size: {x: 2, y: 1}
-  itemPrefab: {fileID: 8370512434901664269, guid: 0e1cb0f602643ff4f8d6b65e209e5240, type: 3}
+  itemPrefab: {fileID: 8370512434901664269, guid: 3aab98b5b316e494189241a2f47ab653, type: 3}
   rotatable: 1

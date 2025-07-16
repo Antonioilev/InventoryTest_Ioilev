@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: fdf2c6ee8734f5343bcda311cc0d806a
+guid: 895a6f21410db5341943789c07880fea
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 7131119404261407681
-    second: Screwdriver_tx_0
+      213: 1816393175719290521
+    second: Sword_tx_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,23 +113,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Screwdriver_tx_0
+      name: Sword_tx_0
       rect:
         serializedVersion: 2
         x: 0
-        y: 27
-        width: 300
-        height: 130
+        y: 0
+        width: 111
+        height: 241
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 1cb75edd053d6f260800000000000000
-      internalID: 7131119404261407681
+      spriteID: 996213b38ff153910800000000000000
+      internalID: 1816393175719290521
       vertices: []
       indices: 
       edges: []
@@ -138,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: a572e4e37903a3d4cab06eafa0d09ed5
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Screwdriver_tx_0: 7131119404261407681
+      Sword_tx_0: 1816393175719290521
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
