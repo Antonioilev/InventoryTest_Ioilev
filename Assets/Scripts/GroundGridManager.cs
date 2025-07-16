@@ -113,11 +113,13 @@ public class GroundGridManager : MonoBehaviour
         spawnedSlots.Clear();
     }
 
+    // Ключевая функция — обновляет занятость слотов, исключая перетаскиваемый предмет
     public void UpdateGridUsed(GameObject excludeItem = null)
     {
         if (gridUsed == null)
             return;
 
+        // Сбрасываем все слоты как свободные
         for (int x = 0; x < columns; x++)
             for (int y = 0; y < rows; y++)
                 gridUsed[x, y] = false;
@@ -127,7 +129,7 @@ public class GroundGridManager : MonoBehaviour
         foreach (Transform item in itemsParent)
         {
             if (excludeItem != null && item.gameObject == excludeItem)
-                continue;
+                continue; // исключаем перетаскиваемый предмет
 
             RectTransform rt = item as RectTransform;
             if (rt == null) continue;
@@ -154,6 +156,7 @@ public class GroundGridManager : MonoBehaviour
         }
     }
 
+    // Проверка, можно ли разместить предмет, при этом слоты занятые исключаемым предметом разрешаем (чтобы он мог возвращаться на свои слоты)
     public bool CanPlaceAt(Vector2Int slotPos, Vector2Int size, GameObject excludeItem = null)
     {
         if (slotPos.x < 0 || slotPos.y < 0 || slotPos.x + size.x > columns || slotPos.y + size.y > rows)
@@ -168,13 +171,14 @@ public class GroundGridManager : MonoBehaviour
                 if (gridUsed[x, y])
                 {
                     if (!IsCellOccupiedByItemAtPosition(x, y, excludeItem))
-                        return false;
+                        return false; // слот занят другим предметом
                 }
             }
         }
         return true;
     }
 
+    // Проверка, принадлежит ли ячейка (x,y) исключаемому предмету excludeItem
     private bool IsCellOccupiedByItemAtPosition(int x, int y, GameObject excludeItem)
     {
         if (excludeItem == null)
