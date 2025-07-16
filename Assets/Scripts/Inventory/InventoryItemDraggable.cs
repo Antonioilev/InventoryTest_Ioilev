@@ -1,4 +1,4 @@
-using UnityEngine;
+п»їusing UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
@@ -10,6 +10,8 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
 
     private Vector2 originalPosition;
     private Transform originalParent;
+
+    private Vector2 pointerOffset; // СЃРјРµС‰РµРЅРёРµ РѕС‚ pivot РґРѕ РєСѓСЂСЃРѕСЂР°
 
     [Header("Drag Targets")]
     public BackpackGridManager backpackGridManager;
@@ -39,16 +41,25 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
 
         if (canvas != null)
             transform.SetParent(canvas.transform, true);
+
+        // Р’С‹С‡РёСЃР»СЏРµРј СЃРјРµС‰РµРЅРёРµ РѕС‚ РєСѓСЂСЃРѕСЂР° РґРѕ pivot
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvas.transform as RectTransform,
+            eventData.position, eventData.pressEventCamera, out Vector2 localMousePosition);
+
+        pointerOffset = localMousePosition - rectTransform.anchoredPosition;
     }
 
     public void OnDrag(PointerEventData eventData)
     {
         if (canvas == null) return;
 
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvas.transform as RectTransform,
-            eventData.position, eventData.pressEventCamera, out Vector2 localPoint);
-        rectTransform.anchoredPosition = localPoint;
+            eventData.position, eventData.pressEventCamera, out Vector2 localMousePosition))
+        {
+            rectTransform.anchoredPosition = localMousePosition - pointerOffset;
+        }
     }
 
     public void OnEndDrag(PointerEventData eventData)
@@ -58,21 +69,21 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
 
         bool placed = false;
 
-        // 1. Попробовать поместить в рюкзак
+        // РџРѕРїСЂРѕР±РѕРІР°С‚СЊ РїРѕРјРµСЃС‚РёС‚СЊ РІ СЂСЋРєР·Р°Рє
         if (backpackGridManager != null &&
             RectTransformUtility.RectangleContainsScreenPoint(backpackGridManager.slotContainer, Input.mousePosition))
         {
             placed = backpackGridManager.PlaceExistingItemAtMousePosition(itemData, gameObject);
         }
 
-        // 2. Если не получилось — пробуем землю
+        // РџРѕРїСЂРѕР±РѕРІР°С‚СЊ Р·РµРјР»СЋ
         else if (!placed && groundGridManager != null &&
             RectTransformUtility.RectangleContainsScreenPoint(groundGridManager.slotContainer, Input.mousePosition))
         {
             placed = groundGridManager.PlaceExistingItemAtMousePosition(itemData, gameObject);
         }
 
-        // 3. Если не получилось — возвращаем назад
+        // Р’РµСЂРЅСѓС‚СЊ РЅР° РјРµСЃС‚Рѕ
         if (!placed)
         {
             transform.SetParent(originalParent, true);
