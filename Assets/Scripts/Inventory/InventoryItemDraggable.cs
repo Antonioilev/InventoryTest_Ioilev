@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
@@ -76,8 +77,69 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
             groundGridManager.UpdateGridUsed(gameObject);
     }
 
+
+    private GameObject GetItemUnderPointer()
+    {
+        PointerEventData pointer = new PointerEventData(EventSystem.current)
+        {
+            position = Input.mousePosition
+        };
+
+        List<RaycastResult> results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointer, results);
+
+        foreach (var result in results)
+        {
+            var go = result.gameObject;
+            if (go != gameObject && go.GetComponent<InventoryItemDraggable>() != null)
+                return go;
+        }
+
+        return null;
+    }
+
+    private bool TryMergeWith(GameObject otherItemGO)
+    {
+        var otherDraggable = otherItemGO.GetComponent<InventoryItemDraggable>();
+        if (otherDraggable == null || otherDraggable.itemData != itemData)
+            return false;
+
+        var mergeHandler = GetComponent<InventoryItemMergeHandler>();
+        if (mergeHandler == null || mergeHandler.mergeRules == null)
+            return false;
+
+        if (!mergeHandler.mergeRules.TryGetMergeResult(itemData, out var resultItem))
+            return false;
+
+        // Удаляем оба
+        Destroy(otherItemGO);
+        Destroy(gameObject);
+
+        // Спавним новый
+        GameObject newItem = Instantiate(resultItem.itemPrefab, transform.parent);
+        var rt = newItem.GetComponent<RectTransform>();
+        rt.pivot = new Vector2(0, 1);
+        rt.anchorMin = new Vector2(0, 1);
+        rt.anchorMax = new Vector2(0, 1);
+        rt.localScale = Vector3.one;
+        rt.anchoredPosition = GetComponent<RectTransform>().anchoredPosition;
+
+        // Прокидываем itemData
+        var drag = newItem.GetComponent<InventoryItemDraggable>();
+        if (drag != null)
+            drag.itemData = resultItem;
+
+        return true;
+    }
     public void OnEndDrag(PointerEventData eventData)
     {
+        // 1. Проверка на мердж
+        var targetItem = GetItemUnderPointer();
+        if (targetItem != null && TryMergeWith(targetItem))
+        {
+            return; // успешно замержили — больше ничего не делаем
+        }
+
         canvasGroup.blocksRaycasts = true;
         canvasGroup.alpha = 1f;
 
