@@ -119,10 +119,8 @@ public class GroundGridManager : MonoBehaviour
 
             Vector2 localPos = rt.anchoredPosition;
 
-            // Ключ: FloorToInt + инверсия Y (высчитываем с низа вверх)
             int startX = Mathf.RoundToInt(localPos.x / slotSize.x);
-            int startY = rows - 1 - Mathf.RoundToInt(localPos.y / slotSize.y) - 1;
-            startY = Mathf.Clamp(startY, 0, rows - 1);
+            int startY = rows - 1 - Mathf.RoundToInt(-localPos.y / slotSize.y);
 
             int sizeX = Mathf.CeilToInt(rt.sizeDelta.x / slotSize.x);
             int sizeY = Mathf.CeilToInt(rt.sizeDelta.y / slotSize.y);
@@ -134,10 +132,10 @@ public class GroundGridManager : MonoBehaviour
                     int x = startX + dx;
                     int y = startY + dy;
 
-                    //if (x >= 0 && x < columns && y >= 0 && y < rows)
-                    //    gridUsed[x, y] = true;
-                    //else
-                    //    Debug.LogWarning($"Item '{item.name}' occupies out-of-bounds cell ({x},{y})");
+                    if (x >= 0 && x < columns && y >= 0 && y < rows)
+                        gridUsed[x, y] = true;
+                    else
+                        Debug.LogWarning($"Item '{item.name}' occupies out-of-bounds cell ({x},{y})");
                 }
             }
         }
@@ -175,8 +173,8 @@ public class GroundGridManager : MonoBehaviour
         Vector2 slotSize = GetSlotSize();
         Vector2 localPos = rt.anchoredPosition;
 
-        int startX = Mathf.FloorToInt(localPos.x / slotSize.x);
-        int startY = rows - 1 - Mathf.FloorToInt(localPos.y / slotSize.y);
+        int startX = Mathf.RoundToInt(localPos.x / slotSize.x);
+        int startY = rows - 1 - Mathf.RoundToInt(localPos.y / slotSize.y);
         int sizeX = Mathf.CeilToInt(rt.sizeDelta.x / slotSize.x);
         int sizeY = Mathf.CeilToInt(rt.sizeDelta.y / slotSize.y);
 
@@ -223,22 +221,36 @@ public class GroundGridManager : MonoBehaviour
         return true;
     }
 
-    public bool PlaceExistingItemAtMousePosition(InventoryItemData itemData, GameObject itemGO)
+    public bool PlaceExistingItemAtMousePosition(InventoryItemData data, GameObject itemGO)
     {
+        if (!GetGridPositionUnderMouse(out Vector2Int gridPos, data.size))
+            return false;
+
+        return PlaceExistingItem(gridPos, data, itemGO);
+    }
+
+    private bool GetGridPositionUnderMouse(out Vector2Int gridPos, Vector2Int itemSize = default)
+    {
+        gridPos = Vector2Int.zero;
+
         Canvas canvas = GetComponentInParent<Canvas>();
         Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
 
         if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(slotContainer, Input.mousePosition, cam, out Vector2 localPoint))
             return false;
 
-        Vector2 slotSize = GetSlotSize();
         Vector2 offset = localPoint + slotContainer.rect.size * 0.5f;
+        Vector2 cellSize = GetSlotSize();
 
-        int column = Mathf.FloorToInt(offset.x / slotSize.x);
-        int row = rows - 1 - Mathf.FloorToInt(offset.y / slotSize.y);
+        int width = gridUsed.GetLength(0);
+        int height = gridUsed.GetLength(1);
 
-        Vector2Int gridPos = new Vector2Int(column, row);
-        return PlaceExistingItem(gridPos, itemData, itemGO);
+        // Вычисляем слот под курсором (без смещений по itemSize)
+        int x = Mathf.Clamp(Mathf.FloorToInt(offset.x / cellSize.x), 0, width - (itemSize.x > 0 ? itemSize.x : 1));
+        int y = Mathf.Clamp(height - 1 - Mathf.FloorToInt(offset.y / cellSize.y), 0, height - (itemSize.y > 0 ? itemSize.y : 1));
+
+        gridPos = new Vector2Int(x, y);
+        return true;
     }
 
     private RectTransform GetSlotRect(Vector2Int gridPos)
