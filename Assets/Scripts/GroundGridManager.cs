@@ -25,37 +25,29 @@ public class GroundGridManager : MonoBehaviour
 
     void Update()
     {
-        // При перетаскивании постоянно обновляем массив занятости с исключением перетаскиваемого предмета
         if (isDragging && draggedItem != null)
         {
             UpdateGridUsed(draggedItem);
         }
     }
 
-    // Вызывается при начале перетаскивания предмета
     public void StartDragging(GameObject item)
     {
         isDragging = true;
         draggedItem = item;
-
-        // Можно сразу обновить занятость, чтобы освободить слоты под предметом
         UpdateGridUsed(draggedItem);
     }
 
-    // Вызывается при завершении перетаскивания
     public void StopDragging()
     {
         isDragging = false;
         draggedItem = null;
-
-        // Обновляем занятость без исключений - фиксируем текущие позиции всех предметов
         UpdateGridUsed();
     }
 
     public void GenerateGrid()
     {
         ClearGrid();
-
         gridUsed = new bool[columns, rows];
 
         GridLayoutGroup grid = slotContainer.GetComponent<GridLayoutGroup>();
@@ -66,13 +58,9 @@ public class GroundGridManager : MonoBehaviour
         }
 
         Vector2 containerSize = slotContainer.rect.size;
-
         float availableWidth = containerSize.x - grid.padding.left - grid.padding.right - grid.spacing.x * (columns - 1);
         float availableHeight = containerSize.y - grid.padding.top - grid.padding.bottom - grid.spacing.y * (rows - 1);
-
-        float cellWidth = availableWidth / columns;
-        float cellHeight = availableHeight / rows;
-        float cellSize = Mathf.Min(cellWidth, cellHeight);
+        float cellSize = Mathf.Min(availableWidth / columns, availableHeight / rows);
 
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         grid.constraintCount = columns;
@@ -87,8 +75,7 @@ public class GroundGridManager : MonoBehaviour
                 spawnedSlots.Add(slot);
 
                 Image img = slot.GetComponent<Image>();
-                if (img != null)
-                    img.color = new Color(1, 1, 1, 0.2f);
+                if (img != null) img.color = new Color(1, 1, 1, 0.2f);
 
                 RectTransform slotRT = slot.GetComponent<RectTransform>();
                 if (slotRT != null)
@@ -107,19 +94,15 @@ public class GroundGridManager : MonoBehaviour
     {
         foreach (var slot in spawnedSlots)
         {
-            if (slot != null)
-                Destroy(slot);
+            if (slot != null) Destroy(slot);
         }
         spawnedSlots.Clear();
     }
 
-    // Ключевая функция — обновляет занятость слотов, исключая перетаскиваемый предмет
     public void UpdateGridUsed(GameObject excludeItem = null)
     {
-        if (gridUsed == null)
-            return;
+        if (gridUsed == null) return;
 
-        // Сбрасываем все слоты как свободные
         for (int x = 0; x < columns; x++)
             for (int y = 0; y < rows; y++)
                 gridUsed[x, y] = false;
@@ -129,15 +112,17 @@ public class GroundGridManager : MonoBehaviour
         foreach (Transform item in itemsParent)
         {
             if (excludeItem != null && item.gameObject == excludeItem)
-                continue; // исключаем перетаскиваемый предмет
+                continue;
 
             RectTransform rt = item as RectTransform;
             if (rt == null) continue;
 
             Vector2 localPos = rt.anchoredPosition;
 
+            // Ключ: FloorToInt + инверсия Y (высчитываем с низа вверх)
             int startX = Mathf.RoundToInt(localPos.x / slotSize.x);
-            int startY = rows - 1 - Mathf.RoundToInt(localPos.y / slotSize.y);
+            int startY = rows - 1 - Mathf.RoundToInt(localPos.y / slotSize.y) - 1;
+            startY = Mathf.Clamp(startY, 0, rows - 1);
 
             int sizeX = Mathf.CeilToInt(rt.sizeDelta.x / slotSize.x);
             int sizeY = Mathf.CeilToInt(rt.sizeDelta.y / slotSize.y);
@@ -149,14 +134,15 @@ public class GroundGridManager : MonoBehaviour
                     int x = startX + dx;
                     int y = startY + dy;
 
-                    if (x >= 0 && x < columns && y >= 0 && y < rows)
-                        gridUsed[x, y] = true;
+                    //if (x >= 0 && x < columns && y >= 0 && y < rows)
+                    //    gridUsed[x, y] = true;
+                    //else
+                    //    Debug.LogWarning($"Item '{item.name}' occupies out-of-bounds cell ({x},{y})");
                 }
             }
         }
     }
 
-    // Проверка, можно ли разместить предмет, при этом слоты занятые исключаемым предметом разрешаем (чтобы он мог возвращаться на свои слоты)
     public bool CanPlaceAt(Vector2Int slotPos, Vector2Int size, GameObject excludeItem = null)
     {
         if (slotPos.x < 0 || slotPos.y < 0 || slotPos.x + size.x > columns || slotPos.y + size.y > rows)
@@ -168,39 +154,33 @@ public class GroundGridManager : MonoBehaviour
             {
                 int x = slotPos.x + dx;
                 int y = slotPos.y + dy;
+
                 if (gridUsed[x, y])
                 {
                     if (!IsCellOccupiedByItemAtPosition(x, y, excludeItem))
-                        return false; // слот занят другим предметом
+                        return false;
                 }
             }
         }
         return true;
     }
 
-    // Проверка, принадлежит ли ячейка (x,y) исключаемому предмету excludeItem
     private bool IsCellOccupiedByItemAtPosition(int x, int y, GameObject excludeItem)
     {
-        if (excludeItem == null)
-            return false;
+        if (excludeItem == null) return false;
 
         RectTransform rt = excludeItem.GetComponent<RectTransform>();
-        if (rt == null)
-            return false;
+        if (rt == null) return false;
 
         Vector2 slotSize = GetSlotSize();
         Vector2 localPos = rt.anchoredPosition;
 
-        int startX = Mathf.RoundToInt(localPos.x / slotSize.x);
-        int startY = rows - 1 - Mathf.RoundToInt(localPos.y / slotSize.y);
-
+        int startX = Mathf.FloorToInt(localPos.x / slotSize.x);
+        int startY = rows - 1 - Mathf.FloorToInt(localPos.y / slotSize.y);
         int sizeX = Mathf.CeilToInt(rt.sizeDelta.x / slotSize.x);
         int sizeY = Mathf.CeilToInt(rt.sizeDelta.y / slotSize.y);
 
-        if (x >= startX && x < startX + sizeX && y >= startY && y < startY + sizeY)
-            return true;
-
-        return false;
+        return (x >= startX && x < startX + sizeX && y >= startY && y < startY + sizeY);
     }
 
     private void MarkCells(Vector2Int slotPos, Vector2Int size, bool occupied)
@@ -221,7 +201,6 @@ public class GroundGridManager : MonoBehaviour
             return false;
 
         MarkCells(slotPosition, itemData.size, true);
-
         itemGO.transform.SetParent(itemsParent, false);
 
         RectTransform itemRT = itemGO.GetComponent<RectTransform>();
@@ -253,11 +232,10 @@ public class GroundGridManager : MonoBehaviour
             return false;
 
         Vector2 slotSize = GetSlotSize();
-        Vector2 offset = localPoint + slotContainer.rect.size / 2f;
+        Vector2 offset = localPoint + slotContainer.rect.size * 0.5f;
 
         int column = Mathf.FloorToInt(offset.x / slotSize.x);
-        int rowRaw = Mathf.FloorToInt(offset.y / slotSize.y);
-        int row = rows - 1 - rowRaw;
+        int row = rows - 1 - Mathf.FloorToInt(offset.y / slotSize.y);
 
         Vector2Int gridPos = new Vector2Int(column, row);
         return PlaceExistingItem(gridPos, itemData, itemGO);
