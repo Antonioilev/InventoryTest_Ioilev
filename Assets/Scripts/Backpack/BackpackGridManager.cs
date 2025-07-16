@@ -328,16 +328,12 @@ public class BackpackGridManager : MonoBehaviour
             for (int x = 0; x < width; x++)
             {
                 Vector2Int pos = new(x, y);
-                GameObject slotGO = spawnedSlots[y * width + x];
-                if (slotGO == null || !slotGO.activeSelf)
-                    continue; // пропускаем выключенные €чейки
-
                 if (CanPlaceAt(pos, itemData.size))
                 {
-                    RectTransform slot = slotGO.GetComponent<RectTransform>();
+                    RectTransform slot = GetSlotRect(pos);
                     if (slot != null && slot.TryGetComponent(out Image img))
                     {
-                        img.color = new Color(0.4f, 1f, 0.4f, 1f); // зелЄна€ подсветка
+                        img.color = new Color(0.4f, 1f, 0.4f, 1f);
                     }
                 }
             }
