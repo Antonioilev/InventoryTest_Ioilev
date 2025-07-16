@@ -21,7 +21,6 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
     {
         rectTransform = GetComponent<RectTransform>();
         canvasGroup = GetComponent<CanvasGroup>();
-
         if (canvasGroup == null)
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
 
@@ -40,8 +39,6 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
 
         if (canvas != null)
             transform.SetParent(canvas.transform, true);
-        else
-            Debug.LogWarning("InventoryItemDraggable: Canvas is null in OnBeginDrag");
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -61,37 +58,25 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
 
         bool placed = false;
 
-        if (backpackGridManager == null)
+        // 1. Попробовать поместить в рюкзак
+        if (backpackGridManager != null &&
+            RectTransformUtility.RectangleContainsScreenPoint(backpackGridManager.slotContainer, Input.mousePosition))
         {
-            Debug.LogWarning("InventoryItemDraggable: backpackGridManager is not assigned!");
-        }
-        else if (backpackGridManager.slotContainer == null)
-        {
-            Debug.LogWarning("InventoryItemDraggable: backpackGridManager.slotContainer is not assigned!");
-        }
-        else if (itemData == null)
-        {
-            Debug.LogWarning("InventoryItemDraggable: itemData is not assigned!");
-        }
-        else
-        {
-            // Проверяем, находится ли мышь над слотом рюкзака
-            if (RectTransformUtility.RectangleContainsScreenPoint(backpackGridManager.slotContainer, Input.mousePosition))
-            {
-                placed = backpackGridManager.TryPlaceItemAtMousePosition(itemData, rectTransform);
-            }
+            placed = backpackGridManager.PlaceExistingItemAtMousePosition(itemData, gameObject);
         }
 
+        // 2. Если не получилось — пробуем землю
+        else if (!placed && groundGridManager != null &&
+            RectTransformUtility.RectangleContainsScreenPoint(groundGridManager.slotContainer, Input.mousePosition))
+        {
+            placed = groundGridManager.PlaceExistingItemAtMousePosition(itemData, gameObject);
+        }
+
+        // 3. Если не получилось — возвращаем назад
         if (!placed)
         {
-            // Если не удалось положить в рюкзак, возвращаем на прежнее место
             transform.SetParent(originalParent, true);
             rectTransform.anchoredPosition = originalPosition;
-        }
-        else
-        {
-            // Уничтожаем перетаскиваемый объект, т.к. предмет теперь в рюкзаке
-            Destroy(gameObject);
         }
     }
 }
