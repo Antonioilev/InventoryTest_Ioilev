@@ -104,11 +104,46 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
         if (groundGridManager != null)
             groundGridManager.StopDragging(); // очистка draggedItem
 
+        // Попытка слияния (мерджа)
         if (!placed)
         {
-            transform.SetParent(originalParent, true);
-            rectTransform.anchoredPosition = originalPosition;
+            // Проверяем попадание в другой предмет
+            var hits = Physics2D.OverlapPointAll(Input.mousePosition);
+            foreach (var hit in hits)
+            {
+                if (hit.gameObject == this.gameObject) continue;
+
+                var otherMerge = hit.GetComponent<InventoryItemMergeHandler>();
+                var thisMerge = GetComponent<InventoryItemMergeHandler>();
+
+                if (otherMerge != null && thisMerge != null && thisMerge.TryMergeWith(hit.gameObject, out InventoryItemData mergedResult))
+                {
+                    // Удаляем оба старых
+                    Destroy(hit.gameObject);
+                    Destroy(this.gameObject);
+
+                    // Спавним новый на позиции старого
+                    Vector2Int mergedSlot = Vector2Int.zero;
+                    if (groundGridManager.GetGridPositionUnderWorld(hit.transform.position, out mergedSlot)) // нужен такой метод
+                    {
+                        GameObject newItem = Instantiate(mergedResult.itemPrefab, groundGridManager.itemsParent);
+                        groundGridManager.PlaceExistingItem(mergedSlot, mergedResult, newItem);
+
+                        // Назначаем ссылки
+                        InventoryItemDraggable drag = newItem.GetComponent<InventoryItemDraggable>();
+                        if (drag != null)
+                        {
+                            drag.itemData = mergedResult;
+                            drag.groundGridManager = groundGridManager;
+                            drag.backpackGridManager = backpackGridManager;
+                        }
+                    }
+
+                    return; // завершили OnEndDrag
+                }
+            }
         }
+
 
         // Гарантированно обновляем занятость после попытки размещения
         if (groundGridManager != null)

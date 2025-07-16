@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8751999714618686964}
   - component: {fileID: 280090346889604104}
   - component: {fileID: 7832583373883320427}
+  - component: {fileID: -920420903709862963}
   m_Layer: 5
   m_Name: Item_Screwdriver
   m_TagString: Untagged
@@ -61,7 +62,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   backpackGridManager: {fileID: 0}
   groundGridManager: {fileID: 0}
-  itemData: {fileID: 11400000, guid: 70819b4467775fd4cb9a28d71e834080, type: 2}
+  itemData: {fileID: 11400000, guid: 295ddf9738e151e4c9337a150a7f63aa, type: 2}
 --- !u!114 &280090346889604104
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -82,7 +83,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 1816393175719290521, guid: 1e08fb1a15295f9429cb25824832c8d0, type: 3}
+  m_Sprite: {fileID: 7131119404261407681, guid: fdf2c6ee8734f5343bcda311cc0d806a, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -108,3 +109,17 @@ MonoBehaviour:
   iconImage: {fileID: 280090346889604104}
   slotPosition: {x: 0, y: 0}
   occupiedSize: {x: 0, y: 0}
+--- !u!114 &-920420903709862963
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8370512434901664269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4a9daeb0588e524c82490facd254909, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  itemData: {fileID: 11400000, guid: 295ddf9738e151e4c9337a150a7f63aa, type: 2}
+  mergeRules: {fileID: 11400000, guid: f4ace6d859d2ca24984901053c0a1114, type: 2}

@@ -283,4 +283,14 @@ public class GroundGridManager : MonoBehaviour
         position = Vector2Int.zero;
         return false;
     }
+    public bool GetGridPositionUnderWorld(Vector3 worldPosition, out Vector2Int gridPos)
+    {
+        Canvas canvas = GetComponentInParent<Canvas>();
+        Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+
+        Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(cam, worldPosition);
+        return GetGridPositionUnderMouse(out gridPos); // используем текущую логику
+    }
+
+
 }

@@ -13,9 +13,9 @@ GameObject:
   - component: {fileID: 8751999714618686964}
   - component: {fileID: 280090346889604104}
   - component: {fileID: 7832583373883320427}
-  - component: {fileID: 2294989460917299953}
+  - component: {fileID: 3953344783628625394}
   m_Layer: 5
-  m_Name: Item_Sword
+  m_Name: Item_Sword 5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -76,7 +76,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0.6114753, b: 0.24842751, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -105,11 +105,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d70166515c960546b780d65eb49e119, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  itemData: {fileID: 11400000, guid: 70819b4467775fd4cb9a28d71e834080, type: 2}
+  itemData: {fileID: 11400000, guid: 801383ec3efb3a5448be61a1b377aa37, type: 2}
   iconImage: {fileID: 280090346889604104}
   slotPosition: {x: 0, y: 0}
   occupiedSize: {x: 0, y: 0}
---- !u!114 &2294989460917299953
+--- !u!114 &3953344783628625394
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -121,5 +121,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4a9daeb0588e524c82490facd254909, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  itemData: {fileID: 11400000, guid: 70819b4467775fd4cb9a28d71e834080, type: 2}
+  itemData: {fileID: 11400000, guid: 801383ec3efb3a5448be61a1b377aa37, type: 2}
   mergeRules: {fileID: 11400000, guid: f4ace6d859d2ca24984901053c0a1114, type: 2}

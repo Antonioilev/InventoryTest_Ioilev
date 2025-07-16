@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8751999714618686964}
   - component: {fileID: 280090346889604104}
   - component: {fileID: 7832583373883320427}
+  - component: {fileID: -7802638658756860680}
   m_Layer: 5
   m_Name: Item_Knife
   m_TagString: Untagged
@@ -108,3 +109,17 @@ MonoBehaviour:
   iconImage: {fileID: 280090346889604104}
   slotPosition: {x: 0, y: 0}
   occupiedSize: {x: 0, y: 0}
+--- !u!114 &-7802638658756860680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8370512434901664269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4a9daeb0588e524c82490facd254909, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  itemData: {fileID: 11400000, guid: 25baf86e728cc724db0dc82051566e4e, type: 2}
+  mergeRules: {fileID: 11400000, guid: f4ace6d859d2ca24984901053c0a1114, type: 2}
