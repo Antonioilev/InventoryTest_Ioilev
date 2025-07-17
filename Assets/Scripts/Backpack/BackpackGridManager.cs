@@ -256,15 +256,26 @@ public class BackpackGridManager : MonoBehaviour
         Canvas canvas = GetComponentInParent<Canvas>();
         Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
 
-        // Новый способ получения позиции курсора
-        Vector2 mousePos = Mouse.current.position.ReadValue();
+        Vector2 pointerPosition;
 
-        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(slotContainer, mousePos, cam, out Vector2 localPoint))
+        var touchscreen = UnityEngine.InputSystem.Touchscreen.current;
+        if (touchscreen != null && touchscreen.touches.Count > 0 && touchscreen.touches[0].isInProgress)
+        {
+            pointerPosition = touchscreen.touches[0].position.ReadValue();
+        }
+        else if (UnityEngine.InputSystem.Mouse.current != null)
+        {
+            pointerPosition = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
+        }
+        else
+        {
+            return false;
+        }
+
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(slotContainer, pointerPosition, cam, out Vector2 localPoint))
             return false;
 
-        // Смещение локальной точки к левому нижнему углу slotContainer (pivot слотов (0,1) — левый верхний)
         Vector2 offset = localPoint + slotContainer.rect.size * 0.5f;
-
         Vector2 cellSize = GetSlotSize();
 
         int width = gridUsed.GetLength(0);
@@ -272,16 +283,15 @@ public class BackpackGridManager : MonoBehaviour
 
         int x = Mathf.Clamp(Mathf.FloorToInt(offset.x / cellSize.x), 0, width - 1);
 
-        // Инвертируем Y, чтобы верхний слот был y = 0, а не снизу
         int y = height - 1 - Mathf.Clamp(Mathf.FloorToInt(offset.y / cellSize.y), 0, height - 1);
 
-        // Корректировка по вертикали для предметов выше 1 ячейки (чтобы верхний левый слот был на высоте курсора)
         if (itemSize != default && itemSize.y > 1)
             y = Mathf.Clamp(y, 0, height - 1);
 
         gridPos = new Vector2Int(x, y);
         return true;
     }
+
 
     private void PlaceRectTransform(RectTransform rt, Vector2Int slotPos, Vector2Int itemSize)
     {

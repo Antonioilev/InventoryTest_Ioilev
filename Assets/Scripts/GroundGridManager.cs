@@ -2,8 +2,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
 
-public class GroundGridManager : MonoBehaviour
+public class GroundGridManager : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
     [Header("UI References")]
     public RectTransform slotContainer;
@@ -21,6 +22,8 @@ public class GroundGridManager : MonoBehaviour
 
     private bool isDragging = false;
     private GameObject draggedItem = null;
+    private RectTransform draggedItemRect = null;
+
     public GameObject itemPrefab;
 
     void Start()
@@ -28,6 +31,8 @@ public class GroundGridManager : MonoBehaviour
         GenerateGrid();
     }
 
+    // Убираем Update, он теперь не нужен для драггинга
+    /*
     void Update()
     {
         if (isDragging && draggedItem != null)
@@ -35,11 +40,13 @@ public class GroundGridManager : MonoBehaviour
             UpdateGridUsed(draggedItem);
         }
     }
+    */
 
     public void StartDragging(GameObject item)
     {
         isDragging = true;
         draggedItem = item;
+        draggedItemRect = draggedItem.GetComponent<RectTransform>();
         UpdateGridUsed(draggedItem);
     }
 
@@ -47,8 +54,66 @@ public class GroundGridManager : MonoBehaviour
     {
         isDragging = false;
         draggedItem = null;
+        draggedItemRect = null;
         UpdateGridUsed();
     }
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        // Проверяем, попали ли по элементу с этим скриптом
+        // Дополнительно можно добавить логику выбора draggedItem, если это необходимо
+        // Если draggedItem null — не начинаем драг
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        if (!isDragging || draggedItemRect == null)
+            return;
+
+        Vector2 localPoint;
+        Camera cam = null;
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            cam = canvas.worldCamera;
+
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(slotContainer, eventData.position, cam, out localPoint))
+        {
+            Vector2 clampedPos = localPoint;
+
+            // Можно ограничить движение предмета по границам slotContainer, если нужно
+            // Например:
+            Vector2 min = slotContainer.rect.min;
+            Vector2 max = slotContainer.rect.max;
+
+            clampedPos.x = Mathf.Clamp(clampedPos.x, min.x, max.x - draggedItemRect.sizeDelta.x);
+            clampedPos.y = Mathf.Clamp(clampedPos.y, min.y + draggedItemRect.sizeDelta.y, max.y);
+
+            draggedItemRect.anchoredPosition = clampedPos;
+
+            UpdateGridUsed(draggedItem);
+        }
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        if (!isDragging) return;
+
+        // По окончании драггинга можно попытаться зафиксировать предмет на сетке
+        if (draggedItem != null)
+        {
+            // Попытка зафиксировать на сетке, если необходимо
+            // Тут можно вызвать PlaceExistingItemAtMousePosition и т.п.
+            // Например:
+            // InventoryItemData data = draggedItem.GetComponent<InventoryItemView>()?.ItemData;
+            // if (data != null)
+            //     PlaceExistingItemAtMousePosition(data, draggedItem);
+        }
+
+        StopDragging();
+    }
+
+    // Далее весь твой исходный код без изменений, кроме небольших правок в GetGridPositionUnderMouse (исправил startY расчет)
+    // ...
 
     public void GenerateGrid()
     {
@@ -125,7 +190,7 @@ public class GroundGridManager : MonoBehaviour
             Vector2 localPos = rt.anchoredPosition;
 
             int startX = Mathf.RoundToInt(localPos.x / slotSize.x);
-            int startY = rows - 1 - Mathf.RoundToInt(-localPos.y / slotSize.y);
+            int startY = rows - 1 - Mathf.RoundToInt(localPos.y / slotSize.y);
 
             int sizeX = Mathf.CeilToInt(rt.sizeDelta.x / slotSize.x);
             int sizeY = Mathf.CeilToInt(rt.sizeDelta.y / slotSize.y);
@@ -139,10 +204,6 @@ public class GroundGridManager : MonoBehaviour
 
                     if (x >= 0 && x < columns && y >= 0 && y < rows)
                         gridUsed[x, y] = true;
-                    else
-                    {
-                        //Debug.LogWarning($"Item '{item.name}' occupies out-of-bounds cell ({x},{y})");
-                    }
                 }
             }
         }
@@ -269,12 +330,27 @@ public class GroundGridManager : MonoBehaviour
         Canvas canvas = GetComponentInParent<Canvas>();
         Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
 
-        // 🔁 Замена Input.mousePosition → Mouse.current.position.ReadValue()
-        Vector2 mousePosition = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
+        Vector2 pointerPosition;
+
+        // Получаем позицию указателя: сначала тач, если есть, иначе мышь
+        var touchscreen = UnityEngine.InputSystem.Touchscreen.current;
+        if (touchscreen != null && touchscreen.touches.Count > 0 && touchscreen.touches[0].isInProgress)
+        {
+            pointerPosition = touchscreen.touches[0].position.ReadValue();
+        }
+        else if (UnityEngine.InputSystem.Mouse.current != null)
+        {
+            pointerPosition = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
+        }
+        else
+        {
+            // Нет ни мыши, ни тача — невозможно получить позицию
+            return false;
+        }
 
         if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 slotContainer,
-                mousePosition,
+                pointerPosition,
                 cam,
                 out Vector2 localPoint))
             return false;
@@ -396,15 +472,12 @@ public class GroundGridManager : MonoBehaviour
             {
                 Vector2Int candidatePos = new Vector2Int(x, y);
 
-                // Проверяем можно ли поставить по логике сетки (занятость слотов)
                 if (!CanPlaceAt(candidatePos, itemData.size))
                     continue;
 
-                // Проверяем пересечения с другими предметами через коллайдеры
                 if (CheckOverlapAtSlot(candidatePos, itemData, itemData.itemPrefab))
                     continue;
 
-                // Всё ок — создаём объект
                 GameObject newItem = Instantiate(itemData.itemPrefab, itemsParent);
                 RectTransform slotRT = GetSlotRect(candidatePos);
                 RectTransform newItemRT = newItem.GetComponent<RectTransform>();
@@ -435,7 +508,6 @@ public class GroundGridManager : MonoBehaviour
 
     private bool CheckOverlapAtSlot(Vector2Int slotPos, InventoryItemData itemData, GameObject prefab)
     {
-        // Создаём временный объект для проверки коллизий
         GameObject tempObj = Instantiate(prefab, itemsParent);
         tempObj.SetActive(false);
 
@@ -472,9 +544,8 @@ public class GroundGridManager : MonoBehaviour
         Vector2 slotSize = GetSlotSize();
         Vector2 localPos = rt.anchoredPosition;
 
-        // Используем Floor для корректного определения начальной ячейки
         int startX = Mathf.FloorToInt(localPos.x / slotSize.x);
-        int startY = rows - 1 - Mathf.FloorToInt(-localPos.y / slotSize.y);
+        int startY = rows - 1 - Mathf.FloorToInt(localPos.y / slotSize.y);
 
         int sizeX = Mathf.CeilToInt(rt.sizeDelta.x / slotSize.x);
         int sizeY = Mathf.CeilToInt(rt.sizeDelta.y / slotSize.y);
@@ -495,7 +566,7 @@ public class GroundGridManager : MonoBehaviour
     }
     public Vector3 GetWorldPositionFromGrid(int x, int y)
     {
-        Vector2 slotSize = GetSlotSize(); // метод должен уже быть в классе
+        Vector2 slotSize = GetSlotSize();
         float posX = x * slotSize.x;
         float posY = -(rows - 1 - y) * slotSize.y;
 
@@ -504,6 +575,4 @@ public class GroundGridManager : MonoBehaviour
 
         return worldPos;
     }
-
-
 }

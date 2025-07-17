@@ -107,9 +107,27 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
 
     private GameObject GetItemUnderPointer()
     {
+        Vector2 pointerPosition = Vector2.zero;
+
+        // Приоритет: Touch > Mouse
+        var touchscreen = UnityEngine.InputSystem.Touchscreen.current;
+        if (touchscreen != null && touchscreen.touches.Count > 0 && touchscreen.primaryTouch.press.isPressed)
+        {
+            pointerPosition = touchscreen.primaryTouch.position.ReadValue();
+        }
+        else if (Mouse.current != null)
+        {
+            pointerPosition = Mouse.current.position.ReadValue();
+        }
+        else
+        {
+            Debug.LogWarning("GetItemUnderPointer: Нет доступных устройств ввода");
+            return null;
+        }
+
         PointerEventData pointer = new PointerEventData(EventSystem.current)
         {
-            position = Mouse.current?.position.ReadValue() ?? Vector2.zero
+            position = pointerPosition
         };
 
         List<RaycastResult> results = new List<RaycastResult>();
@@ -117,9 +135,11 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
 
         foreach (var result in results)
         {
-            var go = result.gameObject;
+            GameObject go = result.gameObject;
             if (go != gameObject && go.GetComponent<InventoryItemDraggable>() != null)
+            {
                 return go;
+            }
         }
 
         return null;
@@ -127,7 +147,9 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        Vector2 mousePos = Mouse.current?.position.ReadValue() ?? Vector2.zero;
+        Vector2 mousePos = eventData.position;
+        Debug.Log($"OnEndDrag called on: {gameObject.name}");
+        Debug.Log($"Mouse Position: {mousePos}");
 
         Transform mergeParent = null;
 
@@ -135,24 +157,34 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
             RectTransformUtility.RectangleContainsScreenPoint(backpackGridManager.slotContainer, mousePos))
         {
             mergeParent = backpackGridManager.slotContainer;
+            Debug.Log("Pointer is over BackpackGrid slotContainer");
         }
         else if (groundGridManager != null &&
                  RectTransformUtility.RectangleContainsScreenPoint(groundGridManager.slotContainer, mousePos))
         {
             mergeParent = groundGridManager.itemsParent;
+            Debug.Log("Pointer is over GroundGrid slotContainer");
         }
         else
         {
             mergeParent = transform.parent;
+            Debug.Log("Pointer is outside known containers, keeping original parent");
         }
 
         var targetItem = GetItemUnderPointer();
+        Debug.Log($"Target item under pointer: {(targetItem != null ? targetItem.name : "null")}");
+
         if (targetItem != null && TryMergeWith(targetItem, mergeParent))
+        {
+            Debug.Log("Items merged successfully");
             return;
+        }
 
         Vector3 worldPoint = Camera.main.ScreenToWorldPoint(mousePos);
         Vector2 worldPoint2D = new Vector2(worldPoint.x, worldPoint.y);
         var hits = Physics2D.OverlapPointAll(worldPoint2D);
+        Debug.Log($"Physics2D.OverlapPointAll hits count: {hits.Length}");
+
         foreach (var hit in hits)
         {
             if (hit.gameObject == gameObject) continue;
@@ -162,6 +194,8 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
 
             if (otherMerge != null && thisMerge != null && thisMerge.TryMergeWith(hit.gameObject, out InventoryItemData mergedResult))
             {
+                Debug.Log($"Merging with {hit.gameObject.name} successful, creating merged item {mergedResult.name}");
+
                 groundGridManager?.ClearItemFromGrid(gameObject);
                 groundGridManager?.ClearItemFromGrid(hit.gameObject);
 
@@ -196,6 +230,8 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
             }
         }
 
+        Debug.Log("No merge happened, placing item in container");
+
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
 
@@ -205,6 +241,7 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
             if (groundGridManager.PlaceExistingItemAtMousePosition(itemData, gameObject))
             {
                 transform.SetParent(groundGridManager.itemsParent, false);
+                Debug.Log("Placed item in GroundGrid");
                 return;
             }
         }
@@ -215,13 +252,16 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
             if (backpackGridManager.PlaceExistingItemAtMousePosition(itemData, gameObject))
             {
                 transform.SetParent(backpackGridManager.itemsParent, false);
+                Debug.Log("Placed item in BackpackGrid");
                 return;
             }
         }
 
         transform.SetParent(originalParent, false);
         rectTransform.anchoredPosition = originalPosition;
+        Debug.Log("Returned item to original position");
     }
+
 
     private bool TryMergeWith(GameObject otherItemGO, Transform parentForNewItem)
     {

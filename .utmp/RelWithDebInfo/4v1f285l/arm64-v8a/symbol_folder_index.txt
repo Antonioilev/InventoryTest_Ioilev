@@ -1,0 +1,1 @@
+L:\MadPixel\Test_Task\InventoryTest_Ioilev\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\build\intermediates\cxx\RelWithDebInfo\4v1f285l\obj\arm64-v8a
