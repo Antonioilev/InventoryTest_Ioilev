@@ -11,7 +11,62 @@ public class BackpackGridLayout : MonoBehaviour
 
     public void GenerateGrid(BackpackPreset preset)
     {
-        // Здесь реализация генерации слотов (не показана)
+        ClearGrid();
+
+        if (preset == null || slotPrefab == null || slotContainer == null)
+        {
+            Debug.LogError("Missing references for grid generation.");
+            return;
+        }
+
+        int width = preset.dimension.x;
+        int height = preset.dimension.y;
+
+        GridLayoutGroup grid = slotContainer.GetComponent<GridLayoutGroup>();
+        if (grid == null)
+        {
+            Debug.LogError("Missing GridLayoutGroup on slotContainer.");
+            return;
+        }
+
+        Vector2 containerSize = slotContainer.rect.size;
+
+        float totalPaddingX = grid.padding.left + grid.padding.right;
+        float totalPaddingY = grid.padding.top + grid.padding.bottom;
+
+        float totalSpacingX = grid.spacing.x * (width - 1);
+        float totalSpacingY = grid.spacing.y * (height - 1);
+
+        // Вычисляем размер ячейки с учётом паддинга и spacing
+        float cellWidth = (containerSize.x - totalPaddingX - totalSpacingX) / width;
+        float cellHeight = (containerSize.y - totalPaddingY - totalSpacingY) / height;
+
+        float cellSize = Mathf.Min(cellWidth, cellHeight);
+
+        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        grid.constraintCount = width;
+        grid.cellSize = new Vector2(cellSize, cellSize);
+
+        // Затем инстанциируем слоты, позиционирование будет уже корректным с учетом настроек GridLayoutGroup
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                GameObject slot = Instantiate(slotPrefab, slotContainer);
+                slot.name = $"Slot_{x}_{y}";
+
+                // Здесь можно дополнительно выставить pivot/anchor, если надо
+                RectTransform slotRT = slot.GetComponent<RectTransform>();
+                if (slotRT != null)
+                {
+                    slotRT.pivot = new Vector2(0f, 1f);
+                    slotRT.anchorMin = new Vector2(0f, 1f);
+                    slotRT.anchorMax = new Vector2(0f, 1f);
+                }
+
+                spawnedSlots.Add(slot);
+            }
+        }
     }
 
     public void ClearGrid()

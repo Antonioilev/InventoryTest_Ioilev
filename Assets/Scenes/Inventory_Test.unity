@@ -1798,8 +1798,11 @@ MonoBehaviour:
   slotContainer: {fileID: 1273487427}
   slotPrefab: {fileID: 2079038362697543349, guid: 426cb6de6c87af140a7a97b56793f4b9, type: 3}
   itemsParent: {fileID: 1423452620}
+  canvasRoot: {fileID: 0}
+  groundItemsParent: {fileID: 0}
   columns: 7
   rows: 3
+  itemPrefab: {fileID: 0}
 --- !u!224 &1337555964 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 9069617187674473457, guid: 00e319614a9f4cf41a35ba84376afeed, type: 3}
@@ -2226,6 +2229,8 @@ MonoBehaviour:
   slotPrefab: {fileID: 2079038362697543349, guid: 426cb6de6c87af140a7a97b56793f4b9, type: 3}
   backgroundContainer: {fileID: 214526964}
   maxCellSize: 150
+  columns: 0
+  rows: 0
 --- !u!222 &1645737272
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2364,11 +2369,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Padding:
-    m_Left: 20
-    m_Right: 20
-    m_Top: 20
-    m_Bottom: 20
-  m_ChildAlignment: 0
+    m_Left: 1
+    m_Right: 1
+    m_Top: 1
+    m_Bottom: 1
+  m_ChildAlignment: 4
   m_StartCorner: 0
   m_StartAxis: 0
   m_CellSize: {x: 100, y: 100}
