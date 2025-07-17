@@ -17,12 +17,12 @@ MonoBehaviour:
     dimension: {x: 3, y: 3}
     disabledCellIndices: 
     backpackVisualPrefab: {fileID: 6379617197943235913, guid: 459f2922b55136d4594bde4906b1cda1, type: 3}
-    isCurrent: 1
+    isCurrent: 0
   - name: BackPack_12cells
     dimension: {x: 4, y: 4}
     disabledCellIndices: 0500000006000000090000000a000000
     backpackVisualPrefab: {fileID: 6379617197943235913, guid: 459f2922b55136d4594bde4906b1cda1, type: 3}
-    isCurrent: 0
+    isCurrent: 1
   - name: BackPack_6_3_cells
     dimension: {x: 6, y: 3}
     disabledCellIndices: 0000000005000000060000000c00000011000000

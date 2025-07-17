@@ -12,7 +12,7 @@ public class Generator_Items : MonoBehaviour
     public InventoryItemData ball;
 
     /// <summary>
-    /// Спавнит предмет на земле, если есть место
+    /// Спавнит предмет на земле, если есть место и нет коллизий
     /// </summary>
     /// <param name="itemData">ScriptableObject с данными предмета</param>
     /// <returns>Созданный GameObject или null</returns>
@@ -24,10 +24,8 @@ public class Generator_Items : MonoBehaviour
             return null;
         }
 
-        if (groundGridManager.TryFindFreePosition(itemData.size, out Vector2Int position))
+        if (groundGridManager.TrySpawnItemWithColliderCheck(itemData, out GameObject newItem))
         {
-            GameObject newItem = Instantiate(itemData.itemPrefab, groundGridManager.itemsParent);
-
             // 👉 Назначаем itemData и менеджеры вручную
             InventoryItemDraggable draggable = newItem.GetComponent<InventoryItemDraggable>();
             if (draggable != null)
@@ -41,11 +39,10 @@ public class Generator_Items : MonoBehaviour
                 Debug.LogWarning($"Generator_Items: Префаб {itemData.name} не содержит InventoryItemDraggable");
             }
 
-            groundGridManager.PlaceExistingItem(position, itemData, newItem);
             return newItem;
         }
 
-        Debug.Log($"Generator_Items: Нет свободного места для '{itemData.itemId}'");
+        Debug.Log($"Generator_Items: Нет свободного места для '{itemData.itemId}' без пересечений");
         return null;
     }
 

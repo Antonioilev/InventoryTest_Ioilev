@@ -9,7 +9,6 @@ public class GroundGridManager : MonoBehaviour
     public GameObject slotPrefab;
     public Transform itemsParent;
 
-
     public Transform canvasRoot;
     public Transform groundItemsParent;
 
@@ -193,6 +192,14 @@ public class GroundGridManager : MonoBehaviour
                 gridUsed[slotPos.x + dx, slotPos.y + dy] = occupied;
     }
 
+    public bool PlaceExistingItemAtMousePosition(InventoryItemData data, GameObject itemGO)
+    {
+        if (!GetGridPositionUnderMouse(out Vector2Int gridPos, data.size))
+            return false;
+
+        return PlaceExistingItem(gridPos, data, itemGO);
+    }
+
     public bool PlaceExistingItem(Vector2Int slotPosition, InventoryItemData itemData, GameObject itemGO)
     {
         if (itemData == null || itemGO == null || itemsParent == null)
@@ -204,6 +211,7 @@ public class GroundGridManager : MonoBehaviour
             return false;
 
         MarkCells(slotPosition, itemData.size, true);
+
         itemGO.transform.SetParent(itemsParent, false);
 
         RectTransform itemRT = itemGO.GetComponent<RectTransform>();
@@ -214,8 +222,11 @@ public class GroundGridManager : MonoBehaviour
             itemRT.pivot = new Vector2(0, 1);
             itemRT.anchorMin = new Vector2(0, 1);
             itemRT.anchorMax = new Vector2(0, 1);
+
             itemRT.sizeDelta = slotRT.sizeDelta * (Vector2)itemData.size;
+
             itemRT.anchoredPosition = slotRT.anchoredPosition;
+
             itemRT.localScale = Vector3.one;
         }
 
@@ -226,12 +237,26 @@ public class GroundGridManager : MonoBehaviour
         return true;
     }
 
-    public bool PlaceExistingItemAtMousePosition(InventoryItemData data, GameObject itemGO)
+    private bool IsOverlappingWithOtherItems(GameObject itemGO)
     {
-        if (!GetGridPositionUnderMouse(out Vector2Int gridPos, data.size))
+        Collider2D itemCollider = itemGO.GetComponent<Collider2D>();
+        if (itemCollider == null)
             return false;
 
-        return PlaceExistingItem(gridPos, data, itemGO);
+        ContactFilter2D filter = new ContactFilter2D();
+        filter.SetLayerMask(LayerMask.GetMask("Items"));
+        filter.useTriggers = false;
+
+        Collider2D[] results = new Collider2D[10];
+        int count = itemCollider.Overlap(filter, results);
+
+        for (int i = 0; i < count; i++)
+        {
+            if (results[i] != null && results[i].gameObject != itemGO)
+                return true;
+        }
+
+        return false;
     }
 
     private bool GetGridPositionUnderMouse(out Vector2Int gridPos, Vector2Int itemSize = default)
@@ -250,7 +275,6 @@ public class GroundGridManager : MonoBehaviour
         int width = gridUsed.GetLength(0);
         int height = gridUsed.GetLength(1);
 
-        // Вычисляем слот под курсором (без смещений по itemSize)
         int x = Mathf.Clamp(Mathf.FloorToInt(offset.x / cellSize.x), 0, width - (itemSize.x > 0 ? itemSize.x : 1));
         int y = Mathf.Clamp(height - 1 - Mathf.FloorToInt(offset.y / cellSize.y), 0, height - (itemSize.y > 0 ? itemSize.y : 1));
 
@@ -271,6 +295,7 @@ public class GroundGridManager : MonoBehaviour
         var grid = slotContainer.GetComponent<GridLayoutGroup>();
         return grid.cellSize;
     }
+
     public bool TryFindFreePosition(Vector2Int size, out Vector2Int position)
     {
         for (int y = 0; y <= rows - size.y; y++)
@@ -288,36 +313,185 @@ public class GroundGridManager : MonoBehaviour
         position = Vector2Int.zero;
         return false;
     }
+
     public bool GetGridPositionUnderWorld(Vector3 worldPosition, out Vector2Int gridPos)
     {
         Canvas canvas = GetComponentInParent<Canvas>();
         Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
 
         Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(cam, worldPosition);
-        return GetGridPositionUnderMouse(out gridPos); // используем текущую логику
+        return GetGridPositionUnderMouse(out gridPos);
     }
+
     public bool MergeItems(GameObject firstItemGO, GameObject secondItemGO, InventoryItemData mergedData)
     {
         if (firstItemGO == null || secondItemGO == null || mergedData == null)
             return false;
 
-        // Удаляем исходные объекты
         Destroy(firstItemGO);
         Destroy(secondItemGO);
 
-        // Создаём новый объект и жёстко парентим к GroundItemsParent
-        GameObject mergedItemGO = Instantiate(itemPrefab, groundItemsParent);
-        mergedItemGO.transform.SetParent(groundItemsParent, false);
+        GameObject mergedItemGO = Instantiate(itemPrefab);
+        mergedItemGO.transform.SetParent(itemsParent, false);
 
-        // Инициализируем предмет
-        InventoryItemView view = mergedItemGO.GetComponent<InventoryItemView>();
+        var view = mergedItemGO.GetComponent<InventoryItemView>();
         if (view != null)
-            view.Init(mergedData, Vector2Int.zero); // позицию можно задать отдельно
+            view.Init(mergedData, Vector2Int.zero);
 
-        // Обновляем сетку
+        if (IsColliding(mergedItemGO))
+        {
+            Debug.LogWarning("Collision detected when merging");
+            Destroy(mergedItemGO);
+            return false;
+        }
+
+        mergedItemGO.transform.SetParent(itemsParent, false);
         UpdateGridUsed();
-
         return true;
+    }
+
+    bool IsColliding(GameObject item)
+    {
+        Collider2D thisCol = item.GetComponent<Collider2D>();
+        if (thisCol == null) return false;
+
+        ContactFilter2D filter = new ContactFilter2D();
+        filter.SetLayerMask(Physics2D.GetLayerCollisionMask(item.layer));
+        filter.useTriggers = false;
+
+        Collider2D[] results = new Collider2D[10];
+        int count = thisCol.Overlap(filter, results);
+
+        foreach (var col in results)
+        {
+            if (col != null && col.gameObject != item)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public bool TrySpawnItemWithColliderCheck(InventoryItemData itemData, out GameObject spawnedItem)
+    {
+        spawnedItem = null;
+
+        if (itemData == null || itemData.itemPrefab == null)
+            return false;
+
+        for (int y = 0; y <= rows - itemData.size.y; y++)
+        {
+            for (int x = 0; x <= columns - itemData.size.x; x++)
+            {
+                Vector2Int candidatePos = new Vector2Int(x, y);
+
+                // РџСЂРѕРІРµСЂСЏРµРј РјРѕР¶РЅРѕ Р»Рё РїРѕСЃС‚Р°РІРёС‚СЊ РїРѕ Р»РѕРіРёРєРµ СЃРµС‚РєРё (Р·Р°РЅСЏС‚РѕСЃС‚СЊ СЃР»РѕС‚РѕРІ)
+                if (!CanPlaceAt(candidatePos, itemData.size))
+                    continue;
+
+                // РџСЂРѕРІРµСЂСЏРµРј РїРµСЂРµСЃРµС‡РµРЅРёСЏ СЃ РґСЂСѓРіРёРјРё РїСЂРµРґРјРµС‚Р°РјРё С‡РµСЂРµР· РєРѕР»Р»Р°Р№РґРµСЂС‹
+                if (CheckOverlapAtSlot(candidatePos, itemData, itemData.itemPrefab))
+                    continue;
+
+                // Р’СЃС‘ РѕРє вЂ” СЃРѕР·РґР°С‘Рј РѕР±СЉРµРєС‚
+                GameObject newItem = Instantiate(itemData.itemPrefab, itemsParent);
+                RectTransform slotRT = GetSlotRect(candidatePos);
+                RectTransform newItemRT = newItem.GetComponent<RectTransform>();
+
+                if (newItemRT != null && slotRT != null)
+                {
+                    newItemRT.pivot = new Vector2(0, 1);
+                    newItemRT.anchorMin = new Vector2(0, 1);
+                    newItemRT.anchorMax = new Vector2(0, 1);
+                    newItemRT.sizeDelta = slotRT.sizeDelta * (Vector2)itemData.size;
+                    newItemRT.anchoredPosition = slotRT.anchoredPosition;
+                    newItemRT.localScale = Vector3.one;
+                }
+
+                InventoryItemView view = newItem.GetComponent<InventoryItemView>();
+                if (view != null)
+                    view.Init(itemData, candidatePos);
+
+                MarkCells(candidatePos, itemData.size, true);
+
+                spawnedItem = newItem;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool CheckOverlapAtSlot(Vector2Int slotPos, InventoryItemData itemData, GameObject prefab)
+    {
+        // РЎРѕР·РґР°С‘Рј РІСЂРµРјРµРЅРЅС‹Р№ РѕР±СЉРµРєС‚ РґР»СЏ РїСЂРѕРІРµСЂРєРё РєРѕР»Р»РёР·РёР№
+        GameObject tempObj = Instantiate(prefab, itemsParent);
+        tempObj.SetActive(false);
+
+        RectTransform slotRT = GetSlotRect(slotPos);
+        RectTransform tempRT = tempObj.GetComponent<RectTransform>();
+
+        if (tempRT != null && slotRT != null)
+        {
+            tempRT.pivot = new Vector2(0, 1);
+            tempRT.anchorMin = new Vector2(0, 1);
+            tempRT.anchorMax = new Vector2(0, 1);
+            tempRT.sizeDelta = slotRT.sizeDelta * (Vector2)itemData.size;
+            tempRT.anchoredPosition = slotRT.anchoredPosition;
+            tempRT.localScale = Vector3.one;
+        }
+
+        tempObj.SetActive(true);
+
+        bool hasOverlap = IsOverlappingWithOtherItems(tempObj);
+
+        Destroy(tempObj);
+
+        return hasOverlap;
+    }
+    public void ClearItemFromGrid(GameObject itemGO)
+    {
+        if (gridUsed == null || itemGO == null)
+            return;
+
+        RectTransform rt = itemGO.GetComponent<RectTransform>();
+        if (rt == null)
+            return;
+
+        Vector2 slotSize = GetSlotSize();
+        Vector2 localPos = rt.anchoredPosition;
+
+        // РСЃРїРѕР»СЊР·СѓРµРј Floor РґР»СЏ РєРѕСЂСЂРµРєС‚РЅРѕРіРѕ РѕРїСЂРµРґРµР»РµРЅРёСЏ РЅР°С‡Р°Р»СЊРЅРѕР№ СЏС‡РµР№РєРё
+        int startX = Mathf.FloorToInt(localPos.x / slotSize.x);
+        int startY = rows - 1 - Mathf.FloorToInt(-localPos.y / slotSize.y);
+
+        int sizeX = Mathf.CeilToInt(rt.sizeDelta.x / slotSize.x);
+        int sizeY = Mathf.CeilToInt(rt.sizeDelta.y / slotSize.y);
+
+        for (int dx = 0; dx < sizeX; dx++)
+        {
+            for (int dy = 0; dy < sizeY; dy++)
+            {
+                int x = startX + dx;
+                int y = startY + dy;
+
+                if (x >= 0 && x < columns && y >= 0 && y < rows)
+                {
+                    gridUsed[x, y] = false;
+                }
+            }
+        }
+    }
+    public Vector3 GetWorldPositionFromGrid(int x, int y)
+    {
+        Vector2 slotSize = GetSlotSize(); // РјРµС‚РѕРґ РґРѕР»Р¶РµРЅ СѓР¶Рµ Р±С‹С‚СЊ РІ РєР»Р°СЃСЃРµ
+        float posX = x * slotSize.x;
+        float posY = -(rows - 1 - y) * slotSize.y;
+
+        Vector2 anchoredPos = new Vector2(posX, posY);
+        Vector3 worldPos = slotContainer.TransformPoint(anchoredPos);
+
+        return worldPos;
     }
 
 
