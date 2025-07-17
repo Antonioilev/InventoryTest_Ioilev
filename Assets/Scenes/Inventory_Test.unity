@@ -2228,7 +2228,6 @@ MonoBehaviour:
   slotContainer: {fileID: 1703275988}
   slotPrefab: {fileID: 2079038362697543349, guid: 426cb6de6c87af140a7a97b56793f4b9, type: 3}
   backgroundContainer: {fileID: 214526964}
-  maxCellSize: 150
   columns: 0
   rows: 0
 --- !u!222 &1645737272
