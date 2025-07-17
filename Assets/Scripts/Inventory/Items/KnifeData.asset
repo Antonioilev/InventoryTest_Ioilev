@@ -15,4 +15,5 @@ MonoBehaviour:
   itemId: Knife_Item
   icon: {fileID: 4103374828399030923, guid: d2aedd51ec8b3f042bb7a98e2f5f367f, type: 3}
   size: {x: 2, y: 1}
+  itemPrefab: {fileID: 8370512434901664269, guid: 0e1cb0f602643ff4f8d6b65e209e5240, type: 3}
   rotatable: 1
