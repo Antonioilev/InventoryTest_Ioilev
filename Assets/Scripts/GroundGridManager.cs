@@ -139,7 +139,9 @@ public class GroundGridManager : MonoBehaviour
                     if (x >= 0 && x < columns && y >= 0 && y < rows)
                         gridUsed[x, y] = true;
                     else
-                        Debug.LogWarning($"Item '{item.name}' occupies out-of-bounds cell ({x},{y})");
+                    {
+                        //Debug.LogWarning($"Item '{item.name}' occupies out-of-bounds cell ({x},{y})");
+                    }
                 }
             }
         }

@@ -16,9 +16,7 @@ public class BackpackGridManager : MonoBehaviour
     public Transform backgroundContainer;
 
     private List<GameObject> spawnedSlots = new();
-    private GameObject currentBackgroundInstance;
-
-    public int maxCellSize = 150;
+    private GameObject currentBackgroundInstance;    
 
     public int columns; // количество столбцов в рюкзаке
     public int rows;    // количество строк в рюкзаке
@@ -57,7 +55,7 @@ public class BackpackGridManager : MonoBehaviour
             int sizeX = Mathf.CeilToInt(rt.sizeDelta.x / slotSize.x);
             int sizeY = Mathf.CeilToInt(rt.sizeDelta.y / slotSize.y);
 
-            Debug.Log($"Item '{item.name}' pos({localPos.x:F2},{localPos.y:F2}), start cell ({startX},{startY}), size ({sizeX},{sizeY})");
+            //Debug.Log($"Item '{item.name}' pos({localPos.x:F2},{localPos.y:F2}), start cell ({startX},{startY}), size ({sizeX},{sizeY})");
 
             for (int dx = 0; dx < sizeX; dx++)
                 for (int dy = 0; dy < sizeY; dy++)
@@ -90,7 +88,7 @@ public class BackpackGridManager : MonoBehaviour
             return;
         }
 
-        // Инициализация количества столбцов и строк
+        // Получаем размер сетки из пресета
         columns = preset.dimension.x;
         rows = preset.dimension.y;
 
@@ -102,10 +100,6 @@ public class BackpackGridManager : MonoBehaviour
             currentBackgroundInstance = Instantiate(preset.backpackVisualPrefab, backgroundContainer, false);
         }
 
-        Vector2 containerSize = slotContainer.rect.size;
-        int width = columns;  // Используем columns вместо preset.dimension.x
-        int height = rows;    // Используем rows вместо preset.dimension.y
-
         GridLayoutGroup grid = slotContainer.GetComponent<GridLayoutGroup>();
         if (grid == null)
         {
@@ -113,21 +107,34 @@ public class BackpackGridManager : MonoBehaviour
             return;
         }
 
-        float availableWidth = containerSize.x - grid.padding.left - grid.padding.right - grid.spacing.x * (width - 1);
-        float availableHeight = containerSize.y - grid.padding.top - grid.padding.bottom - grid.spacing.y * (height - 1);
-        float cellSize = Mathf.Min(availableWidth / width, availableHeight / height, maxCellSize);
+        // Расчёт доступной области с учётом отступов и spacing
+        Vector2 containerSize = slotContainer.rect.size;
 
+        float totalSpacingX = grid.spacing.x * (columns - 1);
+        float totalSpacingY = grid.spacing.y * (rows - 1);
+        float totalPaddingX = grid.padding.left + grid.padding.right;
+        float totalPaddingY = grid.padding.top + grid.padding.bottom;
+
+        float availableWidth = containerSize.x - totalSpacingX - totalPaddingX;
+        float availableHeight = containerSize.y - totalSpacingY - totalPaddingY;
+
+        float cellWidth = availableWidth / columns;
+        float cellHeight = availableHeight / rows;
+        float cellSize = Mathf.Min(cellWidth, cellHeight);
+
+        // Применение к GridLayout
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = width;
+        grid.constraintCount = columns;
         grid.cellSize = new Vector2(cellSize, cellSize);
 
+        // Создание слотов
         HashSet<int> disabledIndices = new(preset.disabledCellIndices ?? new List<int>());
 
-        for (int y = 0; y < height; y++)
+        for (int y = 0; y < rows; y++)
         {
-            for (int x = 0; x < width; x++)
+            for (int x = 0; x < columns; x++)
             {
-                int idx = y * width + x;
+                int idx = y * columns + x;
                 GameObject slot = Instantiate(slotPrefab, slotContainer);
                 slot.name = $"Slot_{x}_{y}_idx{idx}";
                 spawnedSlots.Add(slot);
@@ -150,7 +157,8 @@ public class BackpackGridManager : MonoBehaviour
                 }
 
                 Transform lockIcon = slot.transform.Find("LockIcon");
-                if (lockIcon != null) lockIcon.gameObject.SetActive(isDisabled);
+                if (lockIcon != null)
+                    lockIcon.gameObject.SetActive(isDisabled);
 
                 if (!slot.TryGetComponent(out CanvasGroup cg))
                     cg = slot.AddComponent<CanvasGroup>();
@@ -160,6 +168,7 @@ public class BackpackGridManager : MonoBehaviour
 
         gridUsed = new bool[columns, rows];
     }
+
 
 
 

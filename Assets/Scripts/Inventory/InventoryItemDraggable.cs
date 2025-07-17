@@ -7,6 +7,8 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
 {
     public float cellSize = 140f; // размер ячейки в пикселях, подгони под свою сетку
 
+    private static bool hasLoggedCanvasWarning = false; // флаг для единовременного лога
+
     private Canvas canvas;
     private RectTransform rectTransform;
     private CanvasGroup canvasGroup;
@@ -33,7 +35,18 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
         {
             canvas = GetComponentInParent<Canvas>();
             if (canvas == null)
-                Debug.LogWarning("InventoryItemDraggable: Canvas not found in Start()");
+            {
+                Debug.LogError($"[InventoryItemDraggable] Canvas not found on '{gameObject.name}'. Drag & Drop не будет работать.");
+                enabled = false; // Отключаем компонент, чтобы избежать проблем
+            }
+            else
+            {
+                if (!hasLoggedCanvasWarning)
+                {
+                    Debug.Log($"[InventoryItemDraggable] Canvas найден в Start() на '{gameObject.name}', хотя не был найден в Awake(). Проверь порядок инициализации.");
+                    hasLoggedCanvasWarning = true;
+                }
+            }
         }
     }
 
@@ -45,9 +58,14 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
         if (canvasGroup == null)
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
 
-        canvas = GetComponentInParent<Canvas>();
-        if (canvas == null)
-            Debug.LogWarning("InventoryItemDraggable: Canvas not found in Init()");
+        // Убираем поиск Canvas из Init(), чтобы не сыпалась ложная ошибка
+        // canvas = GetComponentInParent<Canvas>();
+        // if (canvas == null)
+        // {
+        //     Debug.LogError($"[InventoryItemDraggable] Canvas not found for '{gameObject.name}'. Drag & Drop may not work properly.");
+        //     enabled = false;
+        //     return;
+        // }
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -211,7 +229,7 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
 
         if (!placed)
         {
-            Debug.LogWarning("TryMergeWith: Не удалось разместить новый предмет после мерджа");
+            //Debug.LogWarning("TryMergeWith: Не удалось разместить новый предмет после мерджа");
             Destroy(newItem);
             return false;
         }
