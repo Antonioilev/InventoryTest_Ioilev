@@ -22,26 +22,48 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
 
     void Awake()
     {
+        Init(); // вызываем инициализацию
+    }
+
+    void Start()
+    {
+        // Дополнительная проверка, если объект вставлен в Canvas позже
+        if (canvas == null)
+        {
+            canvas = GetComponentInParent<Canvas>();
+            if (canvas == null)
+                Debug.LogWarning("InventoryItemDraggable: Canvas not found in Start()");
+        }
+    }
+
+    public void Init()
+    {
         rectTransform = GetComponent<RectTransform>();
+
         canvasGroup = GetComponent<CanvasGroup>();
         if (canvasGroup == null)
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
 
         canvas = GetComponentInParent<Canvas>();
         if (canvas == null)
-            Debug.LogWarning("InventoryItemDraggable: Canvas not found in parent hierarchy");
+            Debug.LogWarning("InventoryItemDraggable: Canvas not found in Init()");
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        if (canvas == null || canvas.transform == null)
+        {
+            Debug.LogError("InventoryItemDraggable: Canvas or canvas.transform is null in OnBeginDrag");
+            return;
+        }
+
         originalPosition = rectTransform.anchoredPosition;
         originalParent = transform.parent;
 
         canvasGroup.blocksRaycasts = false;
         canvasGroup.alpha = 0.7f;
 
-        if (canvas != null)
-            transform.SetParent(canvas.transform, true);
+        transform.SetParent(canvas.transform, true);
 
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvas.transform as RectTransform,
@@ -49,15 +71,12 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
 
         pointerOffset = localMousePosition - rectTransform.anchoredPosition;
 
-        // Обновляем занятость в рюкзаке (если есть)
-        if (backpackGridManager != null)
-            backpackGridManager.UpdateGridUsed();
+        backpackGridManager?.UpdateGridUsed();
 
-        // Начинаем перетаскивание на земле
         if (groundGridManager != null)
         {
-            groundGridManager.StartDragging(gameObject); // установим draggedItem
-            groundGridManager.UpdateGridUsed(gameObject); // сразу освобождаем слоты под предметом
+            groundGridManager.StartDragging(gameObject);
+            groundGridManager.UpdateGridUsed(gameObject);
         }
     }
 
@@ -72,11 +91,8 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
             rectTransform.anchoredPosition = localMousePosition - pointerOffset;
         }
 
-        // Во время перетаскивания обновляем занятость слотов земли (исключая текущий предмет)
-        if (groundGridManager != null)
-            groundGridManager.UpdateGridUsed(gameObject);
+        groundGridManager?.UpdateGridUsed(gameObject);
     }
-
 
     private GameObject GetItemUnderPointer()
     {
@@ -98,7 +114,7 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
         return null;
     }
 
-    private bool TryMergeWith(GameObject otherItemGO)
+    private bool TryMergeWith(GameObject otherItemGO, Transform parentForNewItem)
     {
         var otherDraggable = otherItemGO.GetComponent<InventoryItemDraggable>();
         if (otherDraggable == null || otherDraggable.itemData != itemData)
@@ -111,104 +127,128 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
         if (!mergeHandler.mergeRules.TryGetMergeResult(itemData, out var resultItem))
             return false;
 
-        // Удаляем оба
         Destroy(otherItemGO);
         Destroy(gameObject);
 
-        // Спавним новый
-        GameObject newItem = Instantiate(resultItem.itemPrefab, transform.parent);
-        var rt = newItem.GetComponent<RectTransform>();
-        rt.pivot = new Vector2(0, 1);
-        rt.anchorMin = new Vector2(0, 1);
-        rt.anchorMax = new Vector2(0, 1);
-        rt.localScale = Vector3.one;
-        rt.anchoredPosition = GetComponent<RectTransform>().anchoredPosition;
+        GameObject newItem = Instantiate(resultItem.itemPrefab);
+        newItem.transform.SetParent(parentForNewItem, false); // СНАЧАЛА родитель
 
-        // Прокидываем itemData
+        var newRT = newItem.GetComponent<RectTransform>();
+        if (newRT != null)
+        {
+            newRT.pivot = new Vector2(0, 1);
+            newRT.anchorMin = new Vector2(0, 1);
+            newRT.anchorMax = new Vector2(0, 1);
+            newRT.localScale = Vector3.one;
+            newRT.anchoredPosition = Vector2.zero; // Сброс позиции
+        }
+
         var drag = newItem.GetComponent<InventoryItemDraggable>();
         if (drag != null)
+        {
             drag.itemData = resultItem;
+            drag.backpackGridManager = backpackGridManager;
+            drag.groundGridManager = groundGridManager;
+            drag.Init(); // Инициализация
+
+            // Сброс состояния drag (прозрачность и блокировка Raycasts)
+            drag.canvasGroup.alpha = 1f;
+            drag.canvasGroup.blocksRaycasts = true;
+        }
 
         return true;
     }
+
     public void OnEndDrag(PointerEventData eventData)
     {
-        // 1. Проверка на мердж
-        var targetItem = GetItemUnderPointer();
-        if (targetItem != null && TryMergeWith(targetItem))
-        {
-            return; // успешно замержили — больше ничего не делаем
-        }
-
-        canvasGroup.blocksRaycasts = true;
-        canvasGroup.alpha = 1f;
-
         bool placed = false;
 
+        Transform mergeParent = null;
         if (backpackGridManager != null &&
             RectTransformUtility.RectangleContainsScreenPoint(backpackGridManager.slotContainer, Input.mousePosition))
         {
-            placed = backpackGridManager.PlaceExistingItemAtMousePosition(itemData, gameObject);
-            if (placed)
-                backpackGridManager.UpdateGridUsed();
+            mergeParent = backpackGridManager.slotContainer;
         }
-        else if (!placed && groundGridManager != null &&
-            RectTransformUtility.RectangleContainsScreenPoint(groundGridManager.slotContainer, Input.mousePosition))
+        else if (groundGridManager != null &&
+                 RectTransformUtility.RectangleContainsScreenPoint(groundGridManager.slotContainer, Input.mousePosition))
         {
-            placed = groundGridManager.PlaceExistingItemAtMousePosition(itemData, gameObject);
-            if (placed)
-                groundGridManager.UpdateGridUsed();
+            mergeParent = groundGridManager.itemsParent;
+        }
+        else
+        {
+            mergeParent = transform.parent;
         }
 
-        if (backpackGridManager != null)
-            backpackGridManager.ClearAllSlotHighlights();
+        // Попытка мерджа
+        var targetItem = GetItemUnderPointer();
+        if (targetItem != null && TryMergeWith(targetItem, mergeParent))
+            return;
 
-        if (groundGridManager != null)
-            groundGridManager.StopDragging(); // очистка draggedItem
-
-        // Попытка слияния (мерджа)
-        if (!placed)
+        // Второй способ мерджа (через физику)
+        var hits = Physics2D.OverlapPointAll(Input.mousePosition);
+        foreach (var hit in hits)
         {
-            // Проверяем попадание в другой предмет
-            var hits = Physics2D.OverlapPointAll(Input.mousePosition);
-            foreach (var hit in hits)
+            if (hit.gameObject == gameObject) continue;
+
+            var otherMerge = hit.GetComponent<InventoryItemMergeHandler>();
+            var thisMerge = GetComponent<InventoryItemMergeHandler>();
+
+            if (otherMerge != null && thisMerge != null && thisMerge.TryMergeWith(hit.gameObject, out InventoryItemData mergedResult))
             {
-                if (hit.gameObject == this.gameObject) continue;
+                Destroy(hit.gameObject);
+                Destroy(gameObject);
 
-                var otherMerge = hit.GetComponent<InventoryItemMergeHandler>();
-                var thisMerge = GetComponent<InventoryItemMergeHandler>();
-
-                if (otherMerge != null && thisMerge != null && thisMerge.TryMergeWith(hit.gameObject, out InventoryItemData mergedResult))
+                Vector2Int mergedSlot = Vector2Int.zero;
+                if (groundGridManager.GetGridPositionUnderWorld(hit.transform.position, out mergedSlot))
                 {
-                    // Удаляем оба старых
-                    Destroy(hit.gameObject);
-                    Destroy(this.gameObject);
+                    GameObject newItem = Instantiate(mergedResult.itemPrefab);
+                    groundGridManager.PlaceExistingItem(mergedSlot, mergedResult, newItem);
 
-                    // Спавним новый на позиции старого
-                    Vector2Int mergedSlot = Vector2Int.zero;
-                    if (groundGridManager.GetGridPositionUnderWorld(hit.transform.position, out mergedSlot)) // нужен такой метод
+                    InventoryItemDraggable drag = newItem.GetComponent<InventoryItemDraggable>();
+                    if (drag != null)
                     {
-                        GameObject newItem = Instantiate(mergedResult.itemPrefab, groundGridManager.itemsParent);
-                        groundGridManager.PlaceExistingItem(mergedSlot, mergedResult, newItem);
-
-                        // Назначаем ссылки
-                        InventoryItemDraggable drag = newItem.GetComponent<InventoryItemDraggable>();
-                        if (drag != null)
-                        {
-                            drag.itemData = mergedResult;
-                            drag.groundGridManager = groundGridManager;
-                            drag.backpackGridManager = backpackGridManager;
-                        }
+                        drag.itemData = mergedResult;
+                        drag.groundGridManager = groundGridManager;
+                        drag.backpackGridManager = backpackGridManager;
+                        drag.Init();
+                        drag.canvasGroup.alpha = 1f;
+                        drag.canvasGroup.blocksRaycasts = true;
                     }
-
-                    return; // завершили OnEndDrag
                 }
+                return;
             }
         }
 
+        // ⬇⬇⬇ Добавь это обязательно ⬇⬇⬇
 
-        // Гарантированно обновляем занятость после попытки размещения
-        if (groundGridManager != null)
-            groundGridManager.UpdateGridUsed();
+        canvasGroup.alpha = 1f;
+        canvasGroup.blocksRaycasts = true;
+
+        // Пытаемся поставить в землю
+        if (groundGridManager != null &&
+            RectTransformUtility.RectangleContainsScreenPoint(groundGridManager.slotContainer, Input.mousePosition))
+        {
+            if (groundGridManager.PlaceExistingItemAtMousePosition(itemData, gameObject))
+            {
+                transform.SetParent(groundGridManager.itemsParent, false);
+                return;
+            }
+        }
+
+        // Пытаемся поставить в рюкзак
+        if (backpackGridManager != null &&
+            RectTransformUtility.RectangleContainsScreenPoint(backpackGridManager.slotContainer, Input.mousePosition))
+        {
+            if (backpackGridManager.PlaceExistingItemAtMousePosition(itemData, gameObject))
+            {
+                transform.SetParent(backpackGridManager.itemsParent, false);
+                return;
+            }
+        }
+
+        // Не получилось — вернем обратно
+        transform.SetParent(originalParent, false);
+        rectTransform.anchoredPosition = originalPosition;
     }
+
 }

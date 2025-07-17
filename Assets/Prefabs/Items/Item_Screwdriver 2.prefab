@@ -13,9 +13,9 @@ GameObject:
   - component: {fileID: 8751999714618686964}
   - component: {fileID: 280090346889604104}
   - component: {fileID: 7832583373883320427}
-  - component: {fileID: -3065917170048169605}
+  - component: {fileID: 1198541316252553761}
   m_Layer: 5
-  m_Name: Item_Sword 2
+  m_Name: Item_Screwdriver 2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -38,7 +38,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -331, y: -44}
-  m_SizeDelta: {x: 131, y: 292.22}
+  m_SizeDelta: {x: 292.22, y: 83.84}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8905043594965477666
 CanvasRenderer:
@@ -62,7 +62,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   backpackGridManager: {fileID: 0}
   groundGridManager: {fileID: 0}
-  itemData: {fileID: 11400000, guid: 70819b4467775fd4cb9a28d71e834080, type: 2}
+  itemData: {fileID: 11400000, guid: 9ca4bfbb50d5a064d82df6db2efdf506, type: 2}
 --- !u!114 &280090346889604104
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -76,14 +76,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 1, b: 0.23137255, a: 1}
+  m_Color: {r: 0, g: 1, b: 0.003575325, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 1816393175719290521, guid: 1e08fb1a15295f9429cb25824832c8d0, type: 3}
+  m_Sprite: {fileID: 7131119404261407681, guid: fdf2c6ee8734f5343bcda311cc0d806a, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -105,11 +105,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d70166515c960546b780d65eb49e119, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  itemData: {fileID: 11400000, guid: 8ee4005a63493e246b5c26ed75d4ec40, type: 2}
+  itemData: {fileID: 11400000, guid: 9ca4bfbb50d5a064d82df6db2efdf506, type: 2}
   iconImage: {fileID: 280090346889604104}
   slotPosition: {x: 0, y: 0}
   occupiedSize: {x: 0, y: 0}
---- !u!114 &-3065917170048169605
+--- !u!114 &1198541316252553761
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -121,5 +121,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4a9daeb0588e524c82490facd254909, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  itemData: {fileID: 11400000, guid: 8ee4005a63493e246b5c26ed75d4ec40, type: 2}
+  itemData: {fileID: 11400000, guid: 9ca4bfbb50d5a064d82df6db2efdf506, type: 2}
   mergeRules: {fileID: 11400000, guid: f4ace6d859d2ca24984901053c0a1114, type: 2}

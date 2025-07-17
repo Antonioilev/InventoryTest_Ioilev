@@ -1,0 +1,8 @@
+L:/MadPixel/Test_Task/InventoryTest_Ioilev/.utmp/RelWithDebInfo/24346u66/arm64-v8a/CMakeFiles/edit_cache.dir
+L:/MadPixel/Test_Task/InventoryTest_Ioilev/.utmp/RelWithDebInfo/24346u66/arm64-v8a/CMakeFiles/rebuild_cache.dir
+L:/MadPixel/Test_Task/InventoryTest_Ioilev/.utmp/RelWithDebInfo/24346u66/arm64-v8a/GameActivity/CMakeFiles/game.dir
+L:/MadPixel/Test_Task/InventoryTest_Ioilev/.utmp/RelWithDebInfo/24346u66/arm64-v8a/GameActivity/CMakeFiles/edit_cache.dir
+L:/MadPixel/Test_Task/InventoryTest_Ioilev/.utmp/RelWithDebInfo/24346u66/arm64-v8a/GameActivity/CMakeFiles/rebuild_cache.dir
+L:/MadPixel/Test_Task/InventoryTest_Ioilev/.utmp/RelWithDebInfo/24346u66/arm64-v8a/FramePacing/CMakeFiles/swappywrapper.dir
+L:/MadPixel/Test_Task/InventoryTest_Ioilev/.utmp/RelWithDebInfo/24346u66/arm64-v8a/FramePacing/CMakeFiles/edit_cache.dir
+L:/MadPixel/Test_Task/InventoryTest_Ioilev/.utmp/RelWithDebInfo/24346u66/arm64-v8a/FramePacing/CMakeFiles/rebuild_cache.dir

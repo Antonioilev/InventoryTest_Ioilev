@@ -1,0 +1,3 @@
+L:\MadPixel\Test_Task\InventoryTest_Ioilev\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\CMakeLists.txt
+L:\MadPixel\Test_Task\InventoryTest_Ioilev\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\FramePacing\CMakeLists.txt
+L:\MadPixel\Test_Task\InventoryTest_Ioilev\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\CMakeLists.txt

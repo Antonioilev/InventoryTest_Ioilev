@@ -9,6 +9,10 @@ public class GroundGridManager : MonoBehaviour
     public GameObject slotPrefab;
     public Transform itemsParent;
 
+
+    public Transform canvasRoot;
+    public Transform groundItemsParent;
+
     public int columns = 10;
     public int rows = 5;
 
@@ -17,6 +21,7 @@ public class GroundGridManager : MonoBehaviour
 
     private bool isDragging = false;
     private GameObject draggedItem = null;
+    public GameObject itemPrefab;
 
     void Start()
     {
@@ -290,6 +295,29 @@ public class GroundGridManager : MonoBehaviour
 
         Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(cam, worldPosition);
         return GetGridPositionUnderMouse(out gridPos); // используем текущую логику
+    }
+    public bool MergeItems(GameObject firstItemGO, GameObject secondItemGO, InventoryItemData mergedData)
+    {
+        if (firstItemGO == null || secondItemGO == null || mergedData == null)
+            return false;
+
+        // Удаляем исходные объекты
+        Destroy(firstItemGO);
+        Destroy(secondItemGO);
+
+        // Создаём новый объект и жёстко парентим к GroundItemsParent
+        GameObject mergedItemGO = Instantiate(itemPrefab, groundItemsParent);
+        mergedItemGO.transform.SetParent(groundItemsParent, false);
+
+        // Инициализируем предмет
+        InventoryItemView view = mergedItemGO.GetComponent<InventoryItemView>();
+        if (view != null)
+            view.Init(mergedData, Vector2Int.zero); // позицию можно задать отдельно
+
+        // Обновляем сетку
+        UpdateGridUsed();
+
+        return true;
     }
 
 

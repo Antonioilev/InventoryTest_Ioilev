@@ -13,9 +13,9 @@ GameObject:
   - component: {fileID: 8751999714618686964}
   - component: {fileID: 280090346889604104}
   - component: {fileID: 7832583373883320427}
-  - component: {fileID: 1198541316252553761}
+  - component: {fileID: 5159939748468099387}
   m_Layer: 5
-  m_Name: Item_Screwdriver 2
+  m_Name: Item_Screwdriver 3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -62,7 +62,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   backpackGridManager: {fileID: 0}
   groundGridManager: {fileID: 0}
-  itemData: {fileID: 11400000, guid: 9ca4bfbb50d5a064d82df6db2efdf506, type: 2}
+  itemData: {fileID: 11400000, guid: 531f94bb1eb8dfb4f869c8359e7032da, type: 2}
 --- !u!114 &280090346889604104
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -76,7 +76,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 1, b: 0.23137255, a: 1}
+  m_Color: {r: 0.5990566, g: 0.7708895, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -105,11 +105,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d70166515c960546b780d65eb49e119, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  itemData: {fileID: 11400000, guid: 9ca4bfbb50d5a064d82df6db2efdf506, type: 2}
+  itemData: {fileID: 11400000, guid: 531f94bb1eb8dfb4f869c8359e7032da, type: 2}
   iconImage: {fileID: 280090346889604104}
   slotPosition: {x: 0, y: 0}
   occupiedSize: {x: 0, y: 0}
---- !u!114 &1198541316252553761
+--- !u!114 &5159939748468099387
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -121,5 +121,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4a9daeb0588e524c82490facd254909, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  itemData: {fileID: 11400000, guid: 9ca4bfbb50d5a064d82df6db2efdf506, type: 2}
+  itemData: {fileID: 11400000, guid: 531f94bb1eb8dfb4f869c8359e7032da, type: 2}
   mergeRules: {fileID: 11400000, guid: f4ace6d859d2ca24984901053c0a1114, type: 2}
