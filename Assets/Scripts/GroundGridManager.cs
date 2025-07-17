@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using UnityEngine.InputSystem;
 
 public class GroundGridManager : MonoBehaviour
 {
@@ -268,7 +269,14 @@ public class GroundGridManager : MonoBehaviour
         Canvas canvas = GetComponentInParent<Canvas>();
         Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
 
-        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(slotContainer, Input.mousePosition, cam, out Vector2 localPoint))
+        // 🔁 Замена Input.mousePosition → Mouse.current.position.ReadValue()
+        Vector2 mousePosition = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
+
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                slotContainer,
+                mousePosition,
+                cam,
+                out Vector2 localPoint))
             return false;
 
         Vector2 offset = localPoint + slotContainer.rect.size * 0.5f;
@@ -283,6 +291,7 @@ public class GroundGridManager : MonoBehaviour
         gridPos = new Vector2Int(x, y);
         return true;
     }
+
 
     private RectTransform GetSlotRect(Vector2Int gridPos)
     {

@@ -8,6 +8,7 @@ public class BackpackGridLayoutManager : MonoBehaviour
     public GameObject slotPrefab;        // Префаб слота ячейки
 
     private List<GameObject> spawnedSlots = new List<GameObject>();
+    private bool[,] gridUsed;
 
     /// <summary>
     /// Создает сетку слотов по заданным параметрам
@@ -27,6 +28,9 @@ public class BackpackGridLayoutManager : MonoBehaviour
 
         int width = dimension.x;
         int height = dimension.y;
+
+        // Инициализируем массив занятости ячеек
+        gridUsed = new bool[width, height];
 
         GridLayoutGroup grid = slotContainer.GetComponent<GridLayoutGroup>();
         if (grid == null)
@@ -77,6 +81,9 @@ public class BackpackGridLayoutManager : MonoBehaviour
                 if (cg == null)
                     cg = slot.AddComponent<CanvasGroup>();
                 cg.blocksRaycasts = !isDisabled;
+
+                // Если ячейка отключена, считаем её занятой
+                gridUsed[x, y] = isDisabled;
             }
         }
     }
@@ -92,6 +99,8 @@ public class BackpackGridLayoutManager : MonoBehaviour
                 Destroy(slot);
         }
         spawnedSlots.Clear();
+
+        gridUsed = null;
     }
 
     /// <summary>
@@ -115,5 +124,54 @@ public class BackpackGridLayoutManager : MonoBehaviour
     {
         var grid = slotContainer.GetComponent<GridLayoutGroup>();
         return grid.cellSize;
+    }
+
+    /// <summary>
+    /// Проверяет, свободна ли область в сетке заданного размера
+    /// </summary>
+    public bool IsAreaFree(Vector2Int position, Vector2Int size)
+    {
+        if (gridUsed == null)
+            return false;
+
+        int width = gridUsed.GetLength(0);
+        int height = gridUsed.GetLength(1);
+
+        if (position.x < 0 || position.y < 0 || position.x + size.x > width || position.y + size.y > height)
+            return false;
+
+        for (int x = 0; x < size.x; x++)
+        {
+            for (int y = 0; y < size.y; y++)
+            {
+                if (gridUsed[position.x + x, position.y + y])
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Помечает область в сетке как занятую или свободную
+    /// </summary>
+    public void MarkAreaUsed(Vector2Int position, Vector2Int size, bool used)
+    {
+        if (gridUsed == null)
+            return;
+
+        int width = gridUsed.GetLength(0);
+        int height = gridUsed.GetLength(1);
+
+        for (int x = 0; x < size.x; x++)
+        {
+            for (int y = 0; y < size.y; y++)
+            {
+                int posX = position.x + x;
+                int posY = position.y + y;
+
+                if (posX >= 0 && posX < width && posY >= 0 && posY < height)
+                    gridUsed[posX, posY] = used;
+            }
+        }
     }
 }

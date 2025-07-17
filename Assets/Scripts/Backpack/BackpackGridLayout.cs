@@ -22,6 +22,8 @@ public class BackpackGridLayout : MonoBehaviour
         int width = preset.dimension.x;
         int height = preset.dimension.y;
 
+        gridUsed = new bool[width, height]; // Инициализация массива занятости
+
         GridLayoutGroup grid = slotContainer.GetComponent<GridLayoutGroup>();
         if (grid == null)
         {
@@ -47,7 +49,7 @@ public class BackpackGridLayout : MonoBehaviour
         grid.constraintCount = width;
         grid.cellSize = new Vector2(cellSize, cellSize);
 
-        // Затем инстанциируем слоты, позиционирование будет уже корректным с учетом настроек GridLayoutGroup
+        // Создаём слоты
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
@@ -55,7 +57,6 @@ public class BackpackGridLayout : MonoBehaviour
                 GameObject slot = Instantiate(slotPrefab, slotContainer);
                 slot.name = $"Slot_{x}_{y}";
 
-                // Здесь можно дополнительно выставить pivot/anchor, если надо
                 RectTransform slotRT = slot.GetComponent<RectTransform>();
                 if (slotRT != null)
                 {
@@ -71,7 +72,12 @@ public class BackpackGridLayout : MonoBehaviour
 
     public void ClearGrid()
     {
-        // Очистка слотов (не показана)
+        foreach (var slot in spawnedSlots)
+        {
+            if (slot != null)
+                Destroy(slot);
+        }
+        spawnedSlots.Clear();
     }
 
     public RectTransform GetSlotRect(Vector2Int gridPos)
@@ -84,7 +90,6 @@ public class BackpackGridLayout : MonoBehaviour
             return spawnedSlots[index].GetComponent<RectTransform>();
         }
 
-        // Возвращаем null, если не нашли
         return null;
     }
 
@@ -93,11 +98,9 @@ public class BackpackGridLayout : MonoBehaviour
         int width = gridUsed.GetLength(0);
         int height = gridUsed.GetLength(1);
 
-        // Проверяем выход за границы
         if (position.x < 0 || position.y < 0 || position.x + size.x > width || position.y + size.y > height)
             return false;
 
-        // Проверяем все клетки на занятость
         for (int x = 0; x < size.x; x++)
         {
             for (int y = 0; y < size.y; y++)
@@ -107,7 +110,7 @@ public class BackpackGridLayout : MonoBehaviour
             }
         }
 
-        return true; // Если все свободны
+        return true;
     }
 
     public void MarkAreaUsed(Vector2Int position, Vector2Int size, bool used)
@@ -119,8 +122,13 @@ public class BackpackGridLayout : MonoBehaviour
         {
             for (int y = 0; y < size.y; y++)
             {
-                if (position.x + x < width && position.y + y < height)
-                    gridUsed[position.x + x, position.y + y] = used;
+                int posX = position.x + x;
+                int posY = position.y + y;
+
+                if (posX >= 0 && posX < width && posY >= 0 && posY < height)
+                {
+                    gridUsed[posX, posY] = used;
+                }
             }
         }
     }

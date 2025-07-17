@@ -12,9 +12,28 @@ public class BackpackItemPlacer : MonoBehaviour
             return false;
 
         GameObject itemGO = Instantiate(itemData.itemPrefab, itemsParent, false);
-        // позиционирование itemGO относительно gridLayout.GetSlotRect(position)
+
+        // Позиционируем itemGO по позиции слота:
+        RectTransform slotRect = gridLayout.GetSlotRect(position);
+        RectTransform itemRT = itemGO.GetComponent<RectTransform>();
+        if (slotRect != null && itemRT != null)
+        {
+            itemRT.pivot = new Vector2(0f, 1f);
+            itemRT.anchorMin = new Vector2(0f, 1f);
+            itemRT.anchorMax = new Vector2(0f, 1f);
+
+            itemRT.sizeDelta = slotRect.sizeDelta * (Vector2)itemData.size;
+            itemRT.anchoredPosition = slotRect.anchoredPosition;
+            itemRT.localScale = Vector3.one;
+        }
+
         gridLayout.MarkAreaUsed(position, itemData.size, true);
-        // инициализация InventoryItemView и прочее
+
+        InventoryItemView view = itemGO.GetComponent<InventoryItemView>();
+        if (view != null)
+            view.Init(itemData, position);
+
         return true;
     }
+
 }

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using UnityEngine.InputSystem; // добавить в using
 
 public class BackpackGridManager : MonoBehaviour
 {
@@ -255,7 +256,10 @@ public class BackpackGridManager : MonoBehaviour
         Canvas canvas = GetComponentInParent<Canvas>();
         Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
 
-        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(slotContainer, Input.mousePosition, cam, out Vector2 localPoint))
+        // Новый способ получения позиции курсора
+        Vector2 mousePos = Mouse.current.position.ReadValue();
+
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(slotContainer, mousePos, cam, out Vector2 localPoint))
             return false;
 
         // Смещение локальной точки к левому нижнему углу slotContainer (pivot слотов (0,1) — левый верхний)
