@@ -139,89 +139,86 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
             return false;
         }
 
-        Vector2Int mergePosition = Vector2Int.zero;
-        bool positionFound = false;
-
-        // Обновляем сетки (если нужно)
-        if (groundGridManager != null)
-        {
-            groundGridManager.UpdateGridUsed(gameObject);
-            groundGridManager.UpdateGridUsed(otherItemGO);
-
-            if (groundGridManager.GetGridPositionUnderWorld(transform.position, out Vector2Int posThis))
-            {
-                mergePosition = posThis;
-                positionFound = true;
-            }
-            else if (groundGridManager.GetGridPositionUnderWorld(otherItemGO.transform.position, out Vector2Int posOther))
-            {
-                mergePosition = posOther;
-                positionFound = true;
-            }
-
-            if (!positionFound || !groundGridManager.CanPlaceAt(mergePosition, resultItem.size))
-            {
-                if (!groundGridManager.TryFindFreePosition(resultItem.size, out mergePosition))
-                {
-                    Debug.LogWarning("TryMergeWith: Нет свободного места для размещения результата мерджа");
-                    return false;
-                }
-            }
-        }
-
-        // Выбираем правильного родителя для нового предмета:
-        // Проверяем, в каком контейнере сейчас предметы — земля или рюкзак
-        Transform correctParent = null;
-
         bool isInBackpack = transform.IsChildOf(backpackGridManager?.slotContainer);
         bool otherIsInBackpack = otherItemGO.transform.IsChildOf(backpackGridManager?.slotContainer);
 
-        if (isInBackpack || otherIsInBackpack)
-        {
-            // Если хотя бы один предмет в рюкзаке — создаём результат в контейнере рюкзака
-            correctParent = backpackGridManager.itemsParent;
-        }
-        else
-        {
-            // Иначе — на земле
-            correctParent = groundGridManager?.itemsParent;
-        }
-
         GameObject newItem = Instantiate(resultItem.itemPrefab);
+
         bool placed = false;
 
-        if (correctParent == groundGridManager?.itemsParent)
+        if (isInBackpack || otherIsInBackpack)
         {
-            placed = groundGridManager.PlaceExistingItem(mergePosition, resultItem, newItem);
-            if (!placed)
+            // Мерж происходит в рюкзаке — размещаем в рюкзаке
+
+            // Если у тебя есть метод размещения предмета в рюкзаке с указанием позиции, вызови его.
+            // Например, если есть backpackGridManager.PlaceExistingItem:
+            // Тут можно попытаться найти свободную позицию для предмета в рюкзаке:
+
+            Vector2Int backpackPos;
+            bool foundPos = false;
+            if (backpackGridManager.TryFindFreePosition(resultItem.size, out backpackPos))
             {
-                Debug.LogWarning("TryMergeWith: Не удалось разместить новый предмет после мерджа");
+                placed = backpackGridManager.PlaceExistingItem(backpackPos, resultItem, newItem);
+                foundPos = placed;
+            }
+
+            if (!foundPos)
+            {
+                Debug.LogWarning("TryMergeWith: Нет места в рюкзаке для нового предмета мерджа");
                 Destroy(newItem);
                 return false;
             }
-        }
-        else if (correctParent == backpackGridManager?.itemsParent)
-        {
-            // Для рюкзака размещаем без grid позиции,
-            // но можешь реализовать PlaceExistingItem для рюкзака, если есть
-            newItem.transform.SetParent(correctParent, false);
-            placed = true;
+
+            newItem.transform.SetParent(backpackGridManager.itemsParent, false);
         }
         else
         {
-            // Запасной вариант
-            newItem.transform.SetParent(correctParent ?? transform.parent, false);
-            placed = true;
+            // Мерж происходит на земле — размещаем на земле
+
+            Vector2Int mergePosition = Vector2Int.zero;
+            bool positionFound = false;
+
+            if (groundGridManager != null)
+            {
+                groundGridManager.UpdateGridUsed(gameObject);
+                groundGridManager.UpdateGridUsed(otherItemGO);
+
+                if (groundGridManager.GetGridPositionUnderWorld(transform.position, out Vector2Int posThis))
+                {
+                    mergePosition = posThis;
+                    positionFound = true;
+                }
+                else if (groundGridManager.GetGridPositionUnderWorld(otherItemGO.transform.position, out Vector2Int posOther))
+                {
+                    mergePosition = posOther;
+                    positionFound = true;
+                }
+
+                if (!positionFound || !groundGridManager.CanPlaceAt(mergePosition, resultItem.size))
+                {
+                    if (!groundGridManager.TryFindFreePosition(resultItem.size, out mergePosition))
+                    {
+                        Debug.LogWarning("TryMergeWith: Нет свободного места для размещения результата мерджа на земле");
+                        Destroy(newItem);
+                        return false;
+                    }
+                }
+
+                placed = groundGridManager.PlaceExistingItem(mergePosition, resultItem, newItem);
+                newItem.transform.SetParent(groundGridManager.itemsParent, false);
+            }
         }
 
-        // Теперь уничтожаем старые предметы
+        if (!placed)
+        {
+            Debug.LogWarning("TryMergeWith: Не удалось разместить новый предмет после мерджа");
+            Destroy(newItem);
+            return false;
+        }
+
         Destroy(otherItemGO);
         Destroy(gameObject);
 
-        // Устанавливаем transform у нового предмета
-        newItem.transform.SetParent(correctParent, false);
-
-        // Корректируем RectTransform
         RectTransform newRT = newItem.GetComponent<RectTransform>();
         if (newRT != null)
         {
@@ -231,7 +228,6 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
             newRT.localScale = Vector3.one;
         }
 
-        // Инициализируем компонент драггинга
         var drag = newItem.GetComponent<InventoryItemDraggable>();
         if (drag != null)
         {
@@ -248,6 +244,9 @@ public class InventoryItemDraggable : MonoBehaviour, IBeginDragHandler, IDragHan
 
         return true;
     }
+
+
+
 
 
 

@@ -20,6 +20,9 @@ public class BackpackGridManager : MonoBehaviour
 
     public int maxCellSize = 150;
 
+    public int columns; // количество столбцов в рюкзаке
+    public int rows;    // количество строк в рюкзаке
+
     void Start()
     {
         GenerateGrid();
@@ -87,6 +90,10 @@ public class BackpackGridManager : MonoBehaviour
             return;
         }
 
+        // Инициализация количества столбцов и строк
+        columns = preset.dimension.x;
+        rows = preset.dimension.y;
+
         if (backgroundContainer != null && preset.backpackVisualPrefab != null)
         {
             if (currentBackgroundInstance != null)
@@ -96,8 +103,8 @@ public class BackpackGridManager : MonoBehaviour
         }
 
         Vector2 containerSize = slotContainer.rect.size;
-        int width = preset.dimension.x;
-        int height = preset.dimension.y;
+        int width = columns;  // Используем columns вместо preset.dimension.x
+        int height = rows;    // Используем rows вместо preset.dimension.y
 
         GridLayoutGroup grid = slotContainer.GetComponent<GridLayoutGroup>();
         if (grid == null)
@@ -151,8 +158,10 @@ public class BackpackGridManager : MonoBehaviour
             }
         }
 
-        gridUsed = new bool[width, height];
+        gridUsed = new bool[columns, rows];
     }
+
+
 
     public void ClearGrid()
     {
@@ -355,4 +364,43 @@ public class BackpackGridManager : MonoBehaviour
             }
         }
     }
+    public bool TryFindFreePosition(Vector2Int size, out Vector2Int foundPos)
+    {
+        // Предполагаем, что в BackpackGridManager есть поля:
+        // int columns, rows;
+        // bool[,] gridUsed; // занятость ячеек
+
+        for (int y = 0; y <= rows - size.y; y++)
+        {
+            for (int x = 0; x <= columns - size.x; x++)
+            {
+                bool canPlace = true;
+
+                for (int dx = 0; dx < size.x; dx++)
+                {
+                    for (int dy = 0; dy < size.y; dy++)
+                    {
+                        if (gridUsed[x + dx, y + dy])
+                        {
+                            canPlace = false;
+                            break;
+                        }
+                    }
+                    if (!canPlace)
+                        break;
+                }
+
+                if (canPlace)
+                {
+                    foundPos = new Vector2Int(x, y);
+                    return true;
+                }
+            }
+        }
+
+        foundPos = Vector2Int.zero;
+        return false;
+    }
+
+
 }
